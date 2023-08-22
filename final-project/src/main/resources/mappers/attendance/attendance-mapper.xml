@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="attendanceMapper">
+  
+  <resultMap type="attendance" id="attendanceResultSet">
+	  <result column="ATT_RECORD_NO" property="attRecordNo"/>
+	  <result column="USER_NO" property="userNo"/>
+	  <result column="USER_NAME" property="userName"/>
+	  <result column="DEPT_NAME" property="deptName"/>
+	  <result column="WORK_DATE" property="workDate"/>
+	  <result column="ON_TIME" property="onTime"/>
+	  <result column="OFF_TIME" property="offTime"/>
+	  <result column="LEAVE_TYPE" property="leaveType"/>
+	  <result column="CURRDATE" property="currDate"/>
+	  <result column="TODO_CONTENT" property="todoContent"/>
+	  <result column="TODO_NO" property="todoNo"/>
+  </resultMap>
+  
+  <resultMap type="leave" id="leaveResultSet">
+  	<result column="LEAVE_TYPE" property="leaveCode"/>
+  	<result column="START_DATE" property="startDate"/>
+  	<result column="END_DATE" property="endDate"/>
+  </resultMap>
+  
+  <resultMap type="record" id="recordResultSet">
+  	<result column="WORK_RECORD" property="workRecord"/>
+  </resultMap>
+  
+   <resultMap type="attRequest" id="attRequestResultSet">
+  	<result column="ATT_RECORD_NO" property="refAtno"/>
+  	<result column="USER_NO" property="userNo"/>
+  	<result column="USER_NAME" property="userName"/>
+  	<result column="DEPT_NAME" property="deptName"/>
+	<result column="WORK_DATE" property="workDate"/>
+	<result column="ON_TIME" property="onTime"/>
+	<result column="UPDATE_ON_TIME" property="updateOnTime"/>
+	<result column="OFF_TIME" property="offTime"/>
+	<result column="UPDATE_OFF_TIME" property="updateOffTime"/>
+	<result column="UPDATE_CONTENT" property="updateContent"/>
+	<result column="LEAVE_CODE" property="leaveCode"/>
+	<result column="LEAVE_TYPE" property="leaveType"/>
+	<result column="CREATE_DATE" property="createDate"/>
+	<result column="STATUS" property="status"/>
+  </resultMap>
+  
+  <!-- 출퇴근기록조회 -->
+  <select id="attendanceList" resultMap="attendanceResultSet">
+  SELECT ATT_RECORD_NO, USER_NO, TO_CHAR(ON_TIME, 'HH24:MI') AS ON_TIME,
+  	 TO_CHAR(OFF_TIME, 'HH24:MI') AS OFF_TIME, LEAVE_TYPE, TO_CHAR(ON_TIME, 'YYYY-MM-DD') AS CURRDATE
+  FROM ATTENDANCE_RECORD
+  JOIN WORK_TYPE USING(LEAVE_CODE)
+  WHERE USER_NO = #{userNo}
+  AND STATUS = 'Y'
+  </select>
+  
+  <!-- 오늘의 출퇴근 -->
+  <select id="attendanceMain" resultMap="attendanceResultSet">
+  SELECT ATT_RECORD_NO, USER_NO, TO_CHAR(ON_TIME, 'HH24:MI') AS ON_TIME,
+  	 TO_CHAR(OFF_TIME, 'HH24:MI') AS OFF_TIME, LEAVE_TYPE, TO_CHAR(ON_TIME, 'YYYY-MM-DD') AS CURRDATE
+  FROM ATTENDANCE_RECORD
+  JOIN WORK_TYPE USING(LEAVE_CODE)
+  WHERE USER_NO = #{userNo}
+  AND TO_CHAR(ON_TIME, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+  AND STATUS = 'Y'
+
+  </select>
+  
+  <insert id="insertTodo">
+  INSERT INTO TODO (TODO_NO, USER_NO, TODO_CONTENT, STATUS)
+  VALUES (SEQ_TNO.NEXTVAL, #{userNo}, #{todoContent}, 'T')
+  </insert>
+  
+  <update id="updateTodo">
+  UPDATE TODO
+  SET TODO_CONTENT = #{todoContent}
+  WHERE USER_NO = #{userNo}
+  AND STATUS = 'T'
+  </update>
+  
+  <select id="selectTodo" resultMap="attendanceResultSet">
+  SELECT TODO_CONTENT
+  FROM TODO
+  WHERE USER_NO = #{userNo}
+  AND STATUS = 'T'
+  </select>
+  
+  <!-- 휴가신청기록조회 -->
+  <select id="selectLeaveList" resultMap="leaveResultSet">
+  SELECT LEAVE_TYPE, START_DATE, END_DATE
+  FROM LEAVE L
+  JOIN APPROVAL_DOC A USING(DOC_NO)
+  JOIN WORK_TYPE USING(LEAVE_CODE)
+  WHERE A.STATUS = 'Y'
+  AND A.DOC_WRITER = ${userNo}
+  AND L.LEAVE_STATUS = '신청'
+  </select>
+  
+  <select id="selectLeave" resultMap="attendanceResultSet">
+	 <![CDATA[
+		  SELECT LEAVE_TYPE, TO_CHAR(START_DATE, 'YYYY-MM-DD') AS CURRDATE
+			FROM (
+			  SELECT DOC_WRITER, LEAVE_TYPE, LEAVE_CODE, START_DATE, END_DATE, LEAVE_STATUS, L.CREATE_DATE
+			  FROM LEAVE L
+			  JOIN APPROVAL_DOC A USING(DOC_NO)
+			  JOIN WORK_TYPE USING(LEAVE_CODE)
+			  WHERE A.STATUS = 'Y'
+			  AND LEAVE_STATUS = '신청'
+			  AND #{currDate} >= START_DATE
+			  AND #{currDate} < END_DATE
+			  AND A.DOC_WRITER = #{userNo}
+			  ORDER BY CREATE_DATE DESC) 
+			WHERE ROWNUM = 1
+		]]>
+  </select>
+  
+  <select id="selectAtt" resultMap="recordResultSet">
+  SELECT ROUND((OFF_TIME - ON_TIME) * 24 * 60) AS WORK_RECORD
+  FROM ATTENDANCE_RECORD
+  WHERE USER_NO = #{userNo}
+  AND TO_CHAR(ON_TIME, 'YYYY-MM-DD') = #{currDate}
+  AND STATUS = 'Y'
+  </select>
+  
+  <insert id="insertRequest">
+  INSERT INTO ATT_REQUEST (REF_ATNO, USER_NO, UPDATE_ON_TIME, UPDATE_OFF_TIME, UPDATE_CONTENT)
+  VALUES(#{refAtno}, #{userNo}, TO_DATE(#{updateOnTime}, 'YYYY-MM-DD HH24:MI')
+  		, TO_DATE(#{updateOffTime}, 'YYYY-MM-DD HH24:MI'), #{updateContent})
+  </insert>
+  
+  <select id="selectMyRequestList" resultMap="attRequestResultSet">
+  SELECT ATT_RECORD_NO, TO_CHAR(ON_TIME,'YYYY-MM-DD') AS WORK_DATE
+  		, TO_CHAR(ON_TIME, 'HH24:MI') AS ON_TIME, TO_CHAR(UPDATE_ON_TIME, 'HH24:MI') AS UPDATE_ON_TIME
+  		, TO_CHAR(OFF_TIME, 'HH24:MI') OFF_TIME, TO_CHAR(UPDATE_OFF_TIME, 'HH24:MI') UPDATE_OFF_TIME
+  		, UPDATE_CONTENT, LEAVE_CODE, LEAVE_TYPE, R.STATUS, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD') AS CREATE_DATE
+  FROM ATT_REQUEST R
+  JOIN ATTENDANCE_RECORD ON(REF_ATNO = ATT_RECORD_NO)
+  JOIN WORK_TYPE USING (LEAVE_CODE)
+  WHERE R.USER_NO = #{userNo}
+  ORDER BY CREATE_DATE DESC
+  </select>
+  
+  <select id="selectRequestList" resultMap="attRequestResultSet">
+  SELECT ATT_RECORD_NO, R.USER_NO, USER_NAME, DEPT_NAME, DEPT_CODE, TO_CHAR(ON_TIME,'YYYY-MM-DD') AS WORK_DATE
+  		, TO_CHAR(ON_TIME, 'HH24:MI') AS ON_TIME, TO_CHAR(UPDATE_ON_TIME, 'HH24:MI') AS UPDATE_ON_TIME
+  		, TO_CHAR(OFF_TIME, 'HH24:MI') OFF_TIME, TO_CHAR(UPDATE_OFF_TIME, 'HH24:MI') UPDATE_OFF_TIME
+  		, UPDATE_CONTENT, LEAVE_CODE, LEAVE_TYPE, R.STATUS, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD') AS CREATE_DATE
+  FROM ATT_REQUEST R
+  JOIN ATTENDANCE_RECORD ON(REF_ATNO = ATT_RECORD_NO)
+  JOIN WORK_TYPE USING (LEAVE_CODE)
+  JOIN MEMBER M ON(R.USER_NO = M.USER_NO)
+  JOIN DEPARTMENT USING(DEPT_CODE)
+  WHERE R.STATUS = 'N'
+  ORDER BY CREATE_DATE DESC
+  </select>
+  
+  <update id="approveAtt">
+  UPDATE ATT_REQUEST
+  SET STATUS = 'Y'
+  WHERE REF_ATNO = #{refAtno}
+  AND STATUS = 'N'
+  </update>
+  
+  <update id="cancleRecord">
+  UPDATE ATTENDANCE_RECORD
+  SET STATUS = 'N'
+  WHERE ATT_RECORD_NO = #{attRecordNo}
+  </update>
+  
+  <insert id="insertAttendance">
+  INSERT INTO ATTENDANCE_RECORD (ATT_RECORD_NO, USER_NO, ON_TIME, OFF_TIME, LEAVE_CODE)
+  VALUES (SEQ_ATNO.NEXTVAL, #{userNo}
+  		, TO_DATE(#{onTime}, 'YYYY-MM-DD HH24:MI:SS')
+  		, TO_DATE(#{offTime}, 'YYYY-MM-DD HH24:MI:SS')
+  		, #{leaveCode})
+  </insert>
+  
+  <update id="rejectAtt">
+  UPDATE ATT_REQUEST
+  SET STATUS = 'R'
+  WHERE REF_ATNO = #{refAtno}
+  </update>
+  
+  <select id="selectMyRequestListCount" resultType="_int">
+  SELECT COUNT(*)
+  FROM ATT_REQUEST
+  WHERE USER_NO = #{userNo}
+  </select>
+  
+  <select id="selectRequestListCount" resultType="_int">
+  SELECT COUNT(*)
+  FROM ATT_REQUEST
+  WHERE STATUS = 'N'
+  </select>
+  
+  <select id="selectManagerAttListCount" resultType="_int">
+  	SELECT COUNT(*)
+  	FROM ATTENDANCE_RECORD
+  	WHERE STATUS = 'Y'
+  	<choose>
+  		<when test="selectedDate == null">
+  		AND TO_CHAR(ON_TIME,'YYYY-MM-DD') = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+  		</when>
+  		<otherwise>
+  		AND TO_CHAR(ON_TIME,'YYYY-MM-DD') = #{selectedDate}
+  		</otherwise>
+  	</choose>
+  </select>
+  
+  <select id="selectManagerAttList" resultMap="attendanceResultSet">
+  SELECT USER_NO, USER_NAME, DEPT_NAME, TO_CHAR(ON_TIME,'YYYY-MM-DD') WORK_DATE, LEAVE_TYPE
+  		, TO_CHAR(ON_TIME,'HH24:MI') ON_TIME, TO_CHAR(OFF_TIME,'HH24:MI') OFF_TIME
+  FROM ATTENDANCE_RECORD A
+  JOIN MEMBER USING(USER_NO)
+  JOIN DEPARTMENT USING(DEPT_CODE)
+  JOIN WORK_TYPE USING (LEAVE_CODE)
+  WHERE A.STATUS = 'Y'
+  <choose>
+  		<when test="selectedDate == null">
+  		AND TO_CHAR(ON_TIME,'YYYY-MM-DD') = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+  		</when>
+  		<otherwise>
+  		AND TO_CHAR(ON_TIME,'YYYY-MM-DD') = #{selectedDate}
+  		</otherwise>
+  	</choose>
+  ORDER BY DEPT_CODE
+  </select> 
+  
+  
+  
+  </mapper>

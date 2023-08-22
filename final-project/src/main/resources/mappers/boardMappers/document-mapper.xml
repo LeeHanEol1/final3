@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="documentMapper">
+
+	<!-- 게시글 개수 조회  -->
+	<select id="selectDocumentListCount" resultType="_int">
+		SELECT COUNT(*) COUNT
+		FROM BOARD 
+		WHERE CATEGORY_CODE = 'B2'
+		AND STATUS = 'Y'
+	</select>
+	
+	<!-- 검색 게시글 개수 조회  -->
+	<select id="selectSearchCount" resultType="_int">
+		SELECT COUNT(*) COUNT
+		FROM BOARD B 
+		JOIN MEMBER ON (BOARD_WRITER = USER_NO)
+		WHERE B.STATUS ='Y'
+		AND B.CATEGORY_CODE ='B2'
+		<choose>
+			<when test="deptCode == '전체' and keyword !=null" >
+				AND (B.BOARD_TITLE LIKE '%'||#{keyword}||'%' OR USER_NAME LIKE '%'||#{keyword}||'%')
+			</when>
+			<when test="deptCode != '전체' and keyword ==null">
+				AND DEPT_CODE = #{deptCode}		
+			</when>	
+			<when test="deptCode != '전체'">
+				AND (B.BOARD_TITLE LIKE '%'||#{keyword}||'%' OR USER_NAME LIKE '%'||#{keyword}||'%')
+				AND DEPT_CODE = #{deptCode}		
+			</when>
+		</choose>
+	</select>
+	
+	<!-- Board ResultMap -->
+	<resultMap type="board" id="DocumentResultSet">
+		<result column ="BOARD_NO" property="boardNo"/>
+		<result column ="BOARD_TITLE" property="boardTitle"/>	
+		<result column ="BOARD_CONTENT" property="boardContent"/>
+		<result column ="USER_NAME" property="boardWriter"/>	
+		<result column ="CATEGORY_CODE" property="categoryCode"/>
+		<result column ="CREATE_DATE" property="createDate"/>
+		<result column ="COUNT" property="count"/>
+		<result column ="IMPORTANCE_LEVEL" property="importanceLevel"/>
+		<result column ="DEPT_NAME" property="deptName"/>	
+	</resultMap>
+	
+	<!-- BoardAttachment ResultMap -->
+	<resultMap type="attachment" id="AttachmentResultSet">
+		<result column="ATTACHMENT_NO" property="attachmentNo"/>
+		<result column="REF_BNO" property="refBno"/>
+		<result column="ORIGIN_NAME" property="originName"/>
+		<result column="CHANGE_NAME" property="changeName"/>
+		<result column="FILE_PATH" property="filePath"/>
+	</resultMap>
+	
+	
+	<!-- 게시글 목록 조회 -->
+	<select id="selectDocumentList" resultMap="DocumentResultSet">
+		SELECT B.BOARD_NO, B.BOARD_TITLE, USER_NAME, DEPT_NAME, B.CATEGORY_CODE, B.IMPORTANCE_LEVEL, B.COUNT, TO_CHAR(B.CREATE_DATE,'YYYY-MM-DD') AS CREATE_DATE
+		FROM BOARD B
+		JOIN MEMBER ON (B.BOARD_WRITER = USER_NO)
+		JOIN DEPARTMENT USING (DEPT_CODE)
+		WHERE B.STATUS = 'Y'
+		AND B.CATEGORY_CODE = 'B2'
+		ORDER BY B.BOARD_NO DESC
+	</select>
+	
+	<!-- 검색 게시글 조회 -->
+	<select id="selectSearchList" resultMap="DocumentResultSet" parameterType="hashmap">
+		SELECT B.BOARD_NO, B.BOARD_TITLE, USER_NAME, DEPT_NAME, B.CATEGORY_CODE, B.IMPORTANCE_LEVEL, B.COUNT, TO_CHAR(B.CREATE_DATE,'YYYY-MM-DD') AS CREATE_DATE
+		FROM BOARD B
+		JOIN MEMBER ON (B.BOARD_WRITER = USER_NO)
+		JOIN DEPARTMENT USING (DEPT_CODE)
+		WHERE B.STATUS ='Y'
+		AND B.CATEGORY_CODE ='B2'
+		<choose>
+			<when test="deptCode == '전체' and keyword != null">
+				AND (B.BOARD_TITLE LIKE '%'||#{keyword}||'%' OR USER_NAME LIKE '%'||#{keyword}||'%')
+			</when>	
+			<when test="deptCode != '전체' and keyword == null">
+				AND DEPT_CODE = #{deptCode}		
+			</when>
+			<when test="deptCode != null">
+				AND (B.BOARD_TITLE LIKE '%'||#{keyword}||'%' OR USER_NAME LIKE '%'||#{keyword}||'%')
+				AND DEPT_CODE = #{deptCode}		
+			</when>
+		</choose>
+		ORDER BY B.BOARD_NO DESC
+	</select>
+	
+	<!-- 게시글 조회수 증가 메소드  -->
+	<update id="boardCount">
+		UPDATE BOARD 
+			SET COUNT = COUNT+1 
+			WHERE BOARD_NO = #{bno}
+	</update>
+	<!-- 게시글 조회 메소드 -->
+	<select id="selectDocument" resultMap="DocumentResultSet">
+		SELECT BOARD_NO,BOARD_TITLE, BOARD_CONTENT,CATEGORY_CODE, IMPORTANCE_LEVEL, COUNT, TO_CHAR(B.CREATE_DATE,'YYYY-MM-DD') AS CREATE_DATE,
+       		   USER_NAME, DEPT_NAME
+		FROM BOARD B
+		JOIN MEMBER ON (B.BOARD_WRITER = USER_NO)
+		JOIN DEPARTMENT USING (DEPT_CODE)
+		WHERE BOARD_NO = #{bno}
+		AND B.STATUS = 'Y'
+	</select>
+	
+	<!-- 다운로드 파일 목록 조회 -->
+	<select id="selectBoardAttachmentList" resultMap="AttachmentResultSet">
+		SELECT ATTACHMENT_NO, REF_BNO, ORIGIN_NAME,CHANGE_NAME, FILE_PATH
+		FROM BOARD_ATTACHMENT
+		WHERE REF_BNO = #{bno}
+		AND STATUS='Y'
+	</select>
+
+	<!-- 게시글 등록 -->
+	<insert id="insertDocument" >
+		INSERT INTO BOARD (BOARD_NO, BOARD_WRITER, CATEGORY_CODE, BOARD_TITLE, BOARD_CONTENT, IMPORTANCE_LEVEL)
+				   VALUES (SEQ_BNO.NEXTVAL, #{boardWriter}, #{categoryCode}, #{boardTitle}, #{boardContent}, #{importanceLevel})	  
+	</insert>
+	
+	<!-- 첨부파일 등록 -->
+	<insert id="insertDocumentAttachment">
+			INSERT INTO BOARD_ATTACHMENT
+				 (ATTACHMENT_NO, REF_BNO, CATEGORY_CODE, ORIGIN_NAME, CHANGE_NAME, FILE_PATH) 
+			VALUES
+				(SEQ_BANO.NEXTVAL, SEQ_BNO.CURRVAL, #{categoryCode}, #{originName}, #{changeName}, #{filePath})		  
+	</insert>
+	
+	<!-- 첨부파일 수정  -->
+	<insert id="updateDocumentAttachment">
+			INSERT INTO BOARD_ATTACHMENT
+				 (ATTACHMENT_NO, REF_BNO, CATEGORY_CODE, ORIGIN_NAME, CHANGE_NAME, FILE_PATH) 
+			VALUES
+				(SEQ_BANO.NEXTVAL, #{refBno}, #{categoryCode}, #{originName}, #{changeName}, #{filePath})		  
+	</insert>
+		
+	
+	<!-- 게시글 수정  -->
+	<update id="updateDocument">
+		UPDATE BOARD
+			SET CATEGORY_CODE = #{categoryCode},
+				BOARD_TITLE = #{boardTitle} , 
+				BOARD_CONTENT = #{boardContent}, 
+				IMPORTANCE_LEVEL =#{importanceLevel},
+				MODIFY_DATE = SYSDATE
+			WHERE BOARD_NO = #{boardNo}	
+	</update>
+	
+	<!-- 첨부파일 삭제(상태값변경)  -->
+	<update id="updateAttachment">
+		UPDATE BOARD_ATTACHMENT
+			SET STATUS = 'N'
+			WHERE REF_BNO = #{boardNo}
+	</update> 
+
+	<!-- 게시글 삭제  -->
+	<update id="deleteDocument">
+		UPDATE BOARD
+			SET STATUS = 'N'
+			WHERE BOARD_NO = #{boardNo}
+	</update>
+	<!-- 삭제된 첨부파일 목록의 경로 조회 메소드  -->
+	<select id="selectDeleteAttachList" resultMap="AttachmentResultSet">
+		SELECT FILE_PATH
+		FROM BOARD_ATTACHMENT
+		WHERE REF_BNO = #{bno}
+		AND STATUS='N'
+	</select>
+	
+</mapper>

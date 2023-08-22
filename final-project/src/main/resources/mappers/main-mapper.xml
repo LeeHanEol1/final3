@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="mainMapper">
+	<resultMap type="board" id="mainBoardResultset">
+		<result column="BOARD_NO" property="boardNo"/>
+		<result column="USER_NAME" property="boardWriter"/>
+		<result column="CATEGORY_CODE" property="categoryCode"/>
+		<result column="BOARD_TITLE" property="boardTitle"/>
+		<result column="BOARD_CONTENT" property="boardContent"/>
+		<result column="CREATE_DATE" property="createDate"/>
+		<result column="COUNT" property="count"/>
+		<result column="STATUS" property="status"/>
+	</resultMap>
+	
+	<resultMap type="messenger" id="mainMessengerResultset">
+		<result column="MESSENGER_NO" property="messengerNo"/>
+		<result column="USER_NAME" property="sender"/>
+		<result column="RECEIVER" property="receiver"/>
+		<result column="MSG_TITLE" property="msgTitle"/>
+		<result column="SEND_DATE" property="sendDate"/>
+		<result column="RECV_DELETE" property="recvDelete"/>
+	</resultMap>
+	
+	<resultMap type="member" id="mainMemberResultset">
+		<result column="USER_NO" property="userNo"/>
+	 	<result column="USER_ID" property="userId"/>
+	 	<result column="USER_NAME" property="userName"/>
+	 	<result column="USER_PWD" property="userPwd"/>
+	 	<result column="PHONE" property="phone"/>
+	 	<result column="EMAIL" property="email"/>
+	 	<result column="ADDRESS" property="address"/>
+	 	<result column="BIRTH" property="birth"/>
+	 	<result column="DEPT_CODE" property="deptCode"/>
+	 	<result column="JOB_CODE" property="jobCode"/>
+	 	<result column="EMPOLYMENT_DATE" property="empolymentDate"/>
+	 	<result column="DEPATURE_DATE" property="depatureDate"/>
+	 	<result column="AUTH" property="auth"/>
+	 	<result column="ENABLED" property="enabled"/>
+	 	<result column="STATUS" property="status"/>
+	 	<result column="JOB_NAME" property="jobName"/>
+	 	<result column="DEPT_NAME" property="deptName"/>
+	 	<result column="CHANGE_NAME" property="changeName"/>
+	</resultMap>
+	
+	<resultMap type="schedule" id="mainScheduleResultset">
+		<result column="SCHEDULE_NO" property="scheduleNo"/>
+		<result column="DEPT_CODE" property="deptCode"/>
+		<result column="USER_NO" property="userNo"/>
+		<result column="SCHEDULE_TYPE" property="scheduleType"/>
+		<result column="SCHEDULE_TITLE" property="scheduleTitle"/>
+		<result column="SCHEDULE_CONTENT" property="scheduleContent"/>
+		<result column="ENROLL_DATE" property="enrollDate"/>
+		<result column="START_DATE" property="startDate"/>
+		<result column="END_DATE" property="endDate"/>
+		<result column="STATUS" property="status"/>
+	</resultMap>
+	
+	<resultMap type="attendance" id="mainAttendanceResultSet">
+		<result column="ATT_RECORD_NO" property="attRecordNo"/>
+		<result column="USER_NO" property="userNo"/>
+		<result column="ON_TIME" property="onTime"/>
+		<result column="OFF_TIME" property="offTime"/>
+		<result column="LEAVE_CODE" property="leaveType"/>
+	</resultMap>
+	
+	<resultMap type="approval" id="mainApprovalResultSet">
+ 		<result column ="APP_NO" property="appNo"/>
+ 		<result column ="DOC_NO" property ="docNo"/>
+ 		<result column ="DEPT_CODE" property ="deptCode"/>
+ 		<result column ="SECOND_APPROVER_NO" property ="secondApproverNo"/>
+ 		<result column ="SECOND_JOB_NAME" property ="secondJobName"/>
+ 		<result column ="SECOND_APPROVER" property ="secondApprover"/>
+ 		<result column ="SECOND_SIGNATURE" property ="secondSignature"/>
+ 		<result column ="LAST_APPROVER_NO" property ="lastApproverNo"/>
+ 		<result column ="LAST_JOB_NAME" property = "lastJobName"/>
+ 		<result column ="LAST_APPROVER" property ="lastApprover"/>
+ 		<result column ="LAST_SIGNATURE" property ="lastSignature"/>
+ 		<result column ="SECOND_DATE" property ="secondDate"/>
+ 		<result column ="LAST_DATE" property ="lastDate"/>
+ 		<result column ="RETURN_REASON" property ="returnReason"/>
+ 		<result column ="STATUS" property ="status"/>
+ 		<result column ="DOC_TITLE" property="docTitle"/>
+ 		<result column ="CREATE_DATE" property="createDate"/>
+ 		<result column ="DOC_NAME" property="docName"/>
+ 	</resultMap>
+	
+	<resultMap type="todo" id="mainTodoResultSet">
+		<result column ="TODO_NO" property="todoNo"/>
+		<result column ="USER_NO" property="userNo"/>
+		<result column ="TODO_CONTENT" property="todoContent"/>
+		<result column ="STATUS" property="status"/>
+	</resultMap>
+	
+	<resultMap type="alert" id="mainAlertResultSet">
+		<result column="ALERT_NO" property="alertNo"/>
+		<result column="DOC_NO" property="docNo"/>
+		<result column="DOC_TYPE" property="docType"/>
+		<result column="SENDER" property="sender"/>
+		<result column="RECEIVER" property="receiver"/>
+		<result column="ALERT_CONTENT" property="content"/>
+		<result column="ALERT_TYPE" property="cmd"/>
+		<result column="ALERT_DATE" property="alertDate"/>
+		<result column="URL" property="url"/>
+		<result column="STATUS" property="status"/>
+		<result column="LAST_SIGNATURE" property="lastSignature"/>
+	</resultMap>
+	
+	<resultMap type="memberAttachment" id="mainAttachmentResultSet">
+		<result column="MEM_ATTACHMENT_NO" property="memAttachmentNo"/>
+		<result column="REF_UNO" property="refUno"/>
+		<result column="ORIGIN_NAME" property="originName"/>
+		<result column="CHANGE_NAME" property="changeName"/>
+		<result column="FILE_PATH" property="filePath"/>
+		<result column="STATUS" property="status"/>
+	</resultMap>
+	
+	<!-- 최신 공지사항 조회  -->
+	<select id="mainNoticeList" resultMap="mainBoardResultset">
+		SELECT ROWNUM, B.*
+		FROM (SELECT BOARD_NO, BOARD_TITLE, USER_NAME, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD') CREATE_DATE, COUNT
+				FROM BOARD B
+				JOIN MEMBER M ON (BOARD_WRITER = USER_NO)
+				WHERE B.STATUS = 'Y'
+				AND CATEGORY_CODE = 'B1'
+				ORDER BY BOARD_NO DESC) B
+		WHERE ROWNUM BETWEEN 1 AND 6
+	</select>
+	
+	<!-- 즐겨찾기 공지사항 조회  -->
+	<select id="mainNoticeLikedList" resultMap="mainBoardResultset">
+		SELECT ROWNUM, B.*
+		FROM (SELECT B.BOARD_NO, B.BOARD_TITLE, M.USER_NAME, M.USER_NO, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD') CREATE_DATE, COUNT
+			FROM BOARD B
+			JOIN RECOMMEND R ON(BOARD_NO = REF_BNO)
+			JOIN MEMBER M ON(B.BOARD_WRITER = M.USER_NO)
+			WHERE REF_UNO = #{userNo}
+			AND B.STATUS = 'Y'
+		    AND R.TYPE = 'B'
+			AND B.CATEGORY_CODE = 'B1'
+		    ORDER BY BOARD_NO DESC) B
+		WHERE ROWNUM BETWEEN 1 AND 6
+	</select>
+	
+	<!-- 최신 쪽지 조회  -->
+	<select id="mainMessengerList" resultMap="mainMessengerResultset">
+		SELECT ROWNUM, ME.*
+		FROM (SELECT MESSENGER_NO, MSG_TITLE, USER_NAME, TO_CHAR(SEND_DATE, 'YYYY-MM-DD') SEND_DATE
+				FROM MESSENGER ME
+				JOIN MEMBER M ON (SENDER = USER_NO)
+				WHERE RECEIVER = (SELECT USER_NO
+				                    FROM MEMBER 
+				                    WHERE USER_ID = #{userId})
+				AND ME.RECV_DELETE = 'N'
+				ORDER BY MESSENGER_NO DESC) ME
+		WHERE ROWNUM BETWEEN 1 AND 6 
+	</select>
+	
+	<!-- 팀 임직원 조회  -->
+	<select id="mainOthersTeamList" resultMap="mainMemberResultset">
+		SELECT USER_NO, USER_ID, USER_NAME, JOB_NAME, DEPT_NAME, PHONE, EMAIL, EMPOLYMENT_DATE, CHANGE_NAME
+		FROM ( SELECT USER_NO, USER_ID, USER_NAME, J.JOB_NAME, M.JOB_CODE, D.DEPT_NAME, PHONE, EMAIL, TO_CHAR(EMPOLYMENT_DATE, 'YYYY-MM-DD') EMPOLYMENT_DATE, MA.CHANGE_NAME
+			    FROM MEMBER M
+			    JOIN JOB J ON (M.JOB_CODE = J.JOB_CODE)
+			    JOIN DEPARTMENT D ON (M.DEPT_CODE = D.DEPT_CODE)
+			    FULL OUTER JOIN MEMBER_ATTACHMENT MA ON (M.USER_NO = MA.REF_UNO)
+			    WHERE M.DEPT_CODE = #{deptCode} 
+			    AND USER_ID != #{userId}
+			    ORDER BY JOB_CODE )  
+		WHERE ROWNUM BETWEEN 1 AND 10
+	</select>
+	
+	<!-- 전체 임직원 조회  -->
+	<select id="mainOthersAllList" resultMap="mainMemberResultset">
+		SELECT USER_NO, USER_ID, USER_NAME, JOB_NAME, DEPT_NAME, PHONE, EMAIL, EMPOLYMENT_DATE, CHANGE_NAME
+		FROM ( SELECT USER_NO, USER_ID, USER_NAME, M.JOB_CODE, J.JOB_NAME, D.DEPT_NAME, PHONE, EMAIL ,TO_CHAR(EMPOLYMENT_DATE, 'YYYY-MM-DD') EMPOLYMENT_DATE, MA.CHANGE_NAME
+			    FROM MEMBER M
+			    JOIN JOB J ON (M.JOB_CODE = J.JOB_CODE)
+			    JOIN DEPARTMENT D ON (M.DEPT_CODE = D.DEPT_CODE)
+			    LEFT OUTER JOIN MEMBER_ATTACHMENT MA ON (M.USER_NO = MA.REF_UNO)
+			    AND USER_ID != #{userId}
+			    ORDER BY JOB_CODE )  
+		WHERE ROWNUM BETWEEN 1 AND 10
+	</select>
+	
+	<!-- 일정 조회  -->
+	<select id="mainCalendarList" resultMap="mainScheduleResultset">
+		SELECT DISTINCT SCHEDULE_NO, S.DEPT_CODE, SCHEDULE_TITLE, SCHEDULE_CONTENT, START_DATE, END_DATE
+		FROM SCHEDULE S
+		JOIN MEMBER M ON (S.DEPT_CODE = M.DEPT_CODE)
+		WHERE S.STATUS = 'Y'
+		AND S.DEPT_CODE = #{deptCode}
+		AND S.SCHEDULE_TYPE = 'DS'
+	</select>
+	
+	<!-- 해당 날짜 선택시 일정 조회 -->
+	<select id="mainDailyEvents" resultMap="mainScheduleResultset">
+		<![CDATA[
+			SELECT DISTINCT SCHEDULE_NO, SCHEDULE_TITLE
+			FROM SCHEDULE S
+			JOIN MEMBER M ON (S.DEPT_CODE = M.DEPT_CODE)
+			WHERE TRUNC(START_DATE) <= TO_DATE(#{year} || '-' || #{month} || '-' || #{date}, 'YYYY-MM-DD')
+			AND TRUNC(END_DATE) >= TO_DATE(#{year} || '-' || #{month} || '-' || #{date}, 'YYYY-MM-DD')
+			AND S.DEPT_CODE = #{deptCode}
+			AND ROWNUM <= 5
+		]]>
+	</select>
+	<!-- 근태기록조회 -->
+	<select id="selectLeaveType" resultMap="mainAttendanceResultSet">
+	<![CDATA[
+		  SELECT LEAVE_CODE
+			FROM (
+			  SELECT DOC_WRITER, LEAVE_TYPE, LEAVE_CODE, START_DATE, END_DATE, LEAVE_STATUS, L.CREATE_DATE
+			  FROM LEAVE L
+			  JOIN APPROVAL_DOC A USING(DOC_NO)
+			  JOIN WORK_TYPE USING(LEAVE_CODE)
+			  WHERE A.STATUS = 'Y'
+			  AND LEAVE_STATUS = '신청'
+			  AND TO_CHAR(SYSDATE,'YYYY-MM-DD') >= START_DATE
+			  AND TO_CHAR(SYSDATE,'YYYY-MM-DD') <= END_DATE
+			  AND A.DOC_WRITER = #{userNo}
+			  ORDER BY CREATE_DATE DESC) 
+			WHERE ROWNUM = 1
+		]]>
+  </select>
+	<!-- 전자결재 승인여부 리스트 조회 -->
+	<select id="mainApprovalStatus" resultMap="mainApprovalResultSet">
+		SELECT ROWNUM, A.*
+		FROM (SELECT
+			    APP_NO,
+			    A.DOC_NO,
+			    D.DOC_NAME,
+			    AD.DOC_TITLE,
+			    TO_CHAR(AD.CREATE_DATE, 'YYYY-MM-DD') CREATE_DATE,
+			    CASE
+			        WHEN A.SECOND_SIGNATURE = '반려' THEN
+			            CASE
+			                WHEN A.LAST_SIGNATURE = '반려' THEN '반려'
+			                WHEN A.LAST_SIGNATURE = #{userName} THEN '승인'
+			                WHEN A.LAST_SIGNATURE IS NULL THEN '2차 대기'
+			            END
+			        WHEN A.SECOND_APPROVER = A.SECOND_SIGNATURE THEN
+			            CASE
+			                WHEN A.LAST_SIGNATURE = '반려' THEN '반려'
+			                WHEN A.LAST_SIGNATURE =  #{userName} THEN '승인'
+			                WHEN A.LAST_SIGNATURE IS NULL THEN '2차 대기'
+			            END
+			        WHEN A.SECOND_SIGNATURE IS NULL THEN
+			            CASE
+			                WHEN A.LAST_SIGNATURE = '반려' THEN '반려'
+			                WHEN A.LAST_SIGNATURE =  #{userName} THEN '승인'
+			                WHEN A.LAST_SIGNATURE IS NULL THEN '대기'
+			            END
+			        ELSE
+			            CASE
+			                WHEN A.LAST_SIGNATURE = '반려' THEN '반려'
+			                WHEN A.LAST_SIGNATURE =  #{userName} THEN '승인'
+			                WHEN A.LAST_SIGNATURE IS NULL THEN '대기'
+			            END
+			    END AS LAST_SIGNATURE
+    FROM APPROVAL A
+        JOIN APPROVAL_DOC AD ON (A.DOC_NO = AD.DOC_NO)
+        JOIN DOC_TYPE D ON (AD.DOC_TYPE = D.DOC_TYPE)
+        WHERE A.SECOND_APPROVER = #{userName} OR A.LAST_APPROVER = #{userName}
+    ORDER BY APP_NO DESC) A
+	WHERE ROWNUM BETWEEN 1 AND 6
+	</select>
+	
+	<!-- 투두리스트 등록 -->
+	<insert id="mainInsertTodo">
+		INSERT INTO TODO VALUES (SEQ_TNO.NEXTVAL, #{userNo}, #{todoContent}, 'N')
+	</insert>
+	
+	<!-- 투두리스트 조회 -->
+	<select id="mainSelectTodoList" resultMap="mainTodoResultSet">
+	 	SELECT TODO_NO, USER_NO, TODO_CONTENT, STATUS
+	 	FROM TODO
+	 	WHERE USER_NO = #{userNo}
+	 	AND STATUS IN ('N' ,'C')
+	 	ORDER BY TODO_NO DESC
+	</select>
+	
+	<!-- 투두리스트 수정 -->
+	<update id="updateTodoList">
+ 		<!-- UPDATE TODO
+		SET STATUS = CASE
+					    WHEN STATUS = #{status} THEN 'N'
+					    WHEN STATUS = #{status} THEN 'C'
+					 END
+		WHERE TODO_NO = #{todoNo} --> <!-- 얘 안됨. 값이 null로 바뀜 -->
+		
+		<!-- UPDATE TODO
+		<choose>
+			<when test='status == "C"'>
+			SET STATUS = 'N'
+			WHERE TODO_NO = #{todoNo}
+			</when>
+			<when test='status == "N"'>
+			SET STATUS = 'C'
+			WHERE TODO_NO = #{todoNo}
+			</when>
+		</choose> -->
+		
+	  UPDATE TODO
+	  SET STATUS =
+	  <choose>
+	    <when test='status == "C"'>
+	      'N'
+	      WHERE TODO_NO = #{todoNo}
+	    </when>
+	    <when test='status == "N"'>
+	      'C'
+	      WHERE TODO_NO = #{todoNo}
+	    </when>
+	  </choose>
+		
+	</update>
+	
+	<!-- 투두리스트 한개 삭제 -->
+	<update id="deleteTodoList">
+		UPDATE TODO
+		SET STATUS = 'Y'
+		WHERE TODO_NO = #{todoNo}
+	</update>
+	
+	<!-- 투두리스트 전체 삭제 -->
+	<update id="allDeleteTodoList">
+		UPDATE TODO
+		SET STATUS = 'Y'
+		WHERE USER_NO = #{userNo}
+	</update>
+	
+	<!-- 알림 승인 등록  -->
+	<insert id="insertAlert">
+<!-- 		INSERT INTO ALERT (ALERT_NO, DOC_NO, DOC_TYPE, SENDER, RECEIVER, ALERT_DATE) -->
+<!-- 		VALUES(SEQ_ALNO.NEXTVAL, #{docNo}, #{docName}, #{lastSignature}, #{docWriter}, SYSDATE) -->
+		
+		INSERT INTO ALERT(ALERT_NO, DOC_NO, SENDER, RECEIVER, ALERT_DATE, ALERT_CONTENT, DOC_TYPE)
+		SELECT SEQ_ALNO.NEXTVAL, A.DOC_NO, A.LAST_APPROVER, AD.DOC_WRITER, SYSDATE, AD.DOC_TITLE, DT.DOC_NAME
+		FROM APPROVAL A
+		JOIN APPROVAL_DOC AD ON (A.DOC_NO = AD.DOC_NO)
+		JOIN DOC_TYPE DT ON (AD.DOC_TYPE = DT.DOC_TYPE)
+		WHERE A.LAST_SIGNATURE = #{lastSignature}
+		AND AD.DOC_NO = #{docNo}
+	</insert>
+	
+	<!-- 알림 반려 등록  -->
+	<insert id="insertReturnAlert">
+		INSERT INTO ALERT(ALERT_NO, DOC_NO, SENDER, RECEIVER, ALERT_DATE, ALERT_CONTENT, DOC_TYPE)
+		SELECT SEQ_ALNO.NEXTVAL, A.DOC_NO, A.LAST_APPROVER, AD.DOC_WRITER, SYSDATE, AD.DOC_TITLE, DT.DOC_NAME
+		FROM APPROVAL A
+		JOIN APPROVAL_DOC AD ON (A.DOC_NO = AD.DOC_NO)
+		JOIN DOC_TYPE DT ON (AD.DOC_TYPE = DT.DOC_TYPE)
+		WHERE A.LAST_SIGNATURE = '반려'
+		AND AD.DOC_NO = #{docNo}
+	</insert>
+	
+	<!-- 알림 조회 -->
+	<select id="menuAlertList" resultMap="mainAlertResultSet">
+		SELECT ALERT_NO, AL.DOC_NO, AL.DOC_TYPE, A.LAST_SIGNATURE, SENDER, RECEIVER, ALERT_CONTENT, ALERT_DATE, AL.STATUS
+		FROM ALERT AL
+		JOIN APPROVAL A ON (A.DOC_NO = AL.DOC_NO)
+		JOIN APPROVAL_DOC AD ON (AD.DOC_NO = AL.DOC_NO)
+		JOIN MEMBER M ON (M.USER_NO = AD.DOC_WRITER)
+		WHERE AL.STATUS = 'N'
+		AND M.USER_NO = #{userNo}
+		ORDER BY ALERT_NO DESC
+	</select>
+	
+	<!-- 알림 a태그 선택시 읽음 처리 -->
+	<update id="menuAlertUpdate">
+		UPDATE ALERT
+		SET STATUS = 'Y'
+		WHERE ALERT_NO = #{alertNo}
+	</update>
+	
+	<!-- 알림 전체 삭제 -->
+	<delete id="menuAlertAllDelete">
+		DELETE FROM ALERT
+		WHERE RECEIVER = #{userNo}
+	</delete>
+
+	<!-- 출근 등록 -->
+	<insert id="insertOnTime">
+		<choose>
+			<when test="leaveType != null">
+			INSERT INTO ATTENDANCE_RECORD (ATT_RECORD_NO, USER_NO, ON_TIME, LEAVE_CODE)
+			VALUES (SEQ_ATNO.NEXTVAL,#{userNo}, TO_DATE(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS'), #{leaveType})
+			</when>
+			<otherwise>
+			INSERT INTO ATTENDANCE_RECORD (ATT_RECORD_NO, USER_NO, ON_TIME, LEAVE_CODE)
+			VALUES (SEQ_ATNO.NEXTVAL,#{userNo}, TO_DATE(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS'), 'L1')
+			</otherwise>
+		</choose>
+	</insert>
+	
+	<!-- 퇴근 등록 -->
+	<insert id="insertOffTime">
+		UPDATE ATTENDANCE_RECORD 
+		SET OFF_TIME = SYSDATE 
+		WHERE USER_NO = #{userNo} 
+		AND ATT_RECORD_NO = (SELECT MAX(ATT_RECORD_NO) 
+								FROM ATTENDANCE_RECORD)
+	</insert>
+	
+	<!-- 출근 조회 -->
+	<select id="selectOnTime" resultMap="mainAttendanceResultSet">
+		SELECT *
+		FROM ( SELECT ATT_RECORD_NO, ATT.USER_NO, TO_CHAR(ON_TIME, 'HH24:MI') AS ON_TIME, TO_CHAR(OFF_TIME, 'HH24:MI') AS OFF_TIME
+			  FROM ATTENDANCE_RECORD ATT
+			  JOIN MEMBER M ON (M.USER_NO = ATT.USER_NO)
+			  WHERE ATT.USER_NO = #{userNo}
+			    AND TO_DATE(TO_CHAR(ON_TIME, 'YYYY-MM-DD')) = TO_DATE(TO_CHAR(SYSDATE, 'YYYY-MM-DD'))
+			  ORDER BY ON_TIME DESC)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 출근 수정(나중에 완료하기) -->
+	<update id="mainUpdateOnTime">
+	 	UPDATE ATTENDANCE_RECORD
+		SET ON_TIME = SYSDATE
+		WHERE USER_NO = #{userNo}
+		AND ATT_RECORD_NO = (
+		    SELECT ATT_RECORD_NO
+		    FROM (SELECT ATT_RECORD_NO
+		        FROM ATTENDANCE_RECORD
+		        WHERE USER_NO = #{userNo}
+		        ORDER BY ATT_RECORD_NO DESC )
+		    WHERE ROWNUM = 1)
+	</update>
+	
+	<!-- 출근 등록할 때 한번만 등록하게 하기 위한 메소드  -->
+	<select id="selectCount" resultType="_int">
+		SELECT COUNT (ON_TIME)
+		FROM (SELECT TO_DATE(TO_CHAR(ON_TIME, 'YYYY-MM-DD')) AS ON_TIME
+				FROM ATTENDANCE_RECORD
+				WHERE USER_NO = #{userNo})
+		WHERE ON_TIME LIKE SYSDATE
+	</select>
+	
+	<!-- 프로필 조회 -->
+	<select id="selectProfile" resultMap="mainAttachmentResultSet">
+		SELECT *
+		FROM MEMBER_ATTACHMENT
+		WHERE REF_UNO = #{userNo}
+	</select>
+</mapper>

@@ -1,0 +1,36 @@
+/* 왼쪽 상자 전체 div  */
+.main_profile_area {
+/* 	border: 1px solid black; */
+	width: 20vw;
+	height: 85vh;
+	margin-top: 105px;
+	border-radius: 20px;
+	background-color: lightblue;
+}
+
+#main_profile img {
+	border: 1px solid black;
+	width: 11vw;
+	height: 20vh;
+	border-radius: 100px;
+	margin-top: 80px;
+}
+
+.main_profile_area a {
+	text-decoration: none;
+	color: black;
+}
+
+/* 출근,퇴근 표시하는 전체 div  */
+#main_profile_work {
+	background-color: white;
+	width: 18rem;
+	height: 23vh;
+	border-radius: 20px;
+}
+
+#mp_work_input button {
+	background-color: #0E6251;
+	width: 100px;
+	border-radius: 50px;
+}

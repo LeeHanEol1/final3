@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="msgMapper">
+  	<resultMap type="messenger" id="messengerResultSet">
+  		<result column="MESSENGER_NO" property="messengerNo"/>
+  		<result column="SENDER" property="sender"/>
+  		<result column="RECEIVER" property="receiver"/>
+  		<result column="MSG_TITLE" property="msgTitle"/>
+  		<result column="MSG_CONTENT" property="msgContent"/>
+  		<result column="SEND_DATE" property="sendDate"/>
+  		<result column="RECV_DATE" property="recvDate"/>
+  		<result column="SEND_DELETE" property="sendDelete"/>
+  		<result column="RECV_DELETE" property="recvDelete"/>
+  		<result column="READ_STATUS" property="readStatus"/>
+  		<result column="EMC_STATUS" property="emcStatus"/>
+  		<result column="SENDER_UNO" property="senderUno"/>
+  		<result column="RECVR_UNO" property="recvrUno"/>
+  		<result column="SENDER_ID" property="senderId"/>
+  		<result column="RECVR_ID" property="recvrId"/>
+  	</resultMap>
+  
+  	<resultMap type="member" id="searchMember">
+  		<result column="USER_NO" property="userNo"/>
+	 	<result column="USER_ID" property="userId"/>
+	 	<result column="USER_NAME" property="userName"/>
+	 	<result column="DEPT_NAME" property="deptName"/>
+	 	<result column="JOB_NAME" property="jobName"/>
+  	</resultMap>
+  	
+  	<!-- 쪽지 개수(받은쪽지) -->
+  	<select id="recvListCount" resultType="_int">
+  		SELECT COUNT(*)
+		FROM MESSENGER 
+		WHERE RECEIVER = #{userNo}
+		AND RECV_DELETE='N'
+		
+  	</select>
+  
+  	<!-- 받은 쪽지 목록 조회 -->
+  	<select id="selectRecvList" resultMap="messengerResultSet">
+  		SELECT MESSENGER_NO, USER_NAME AS SENDER, MSG_TITLE, RECV_DATE, READ_STATUS, EMC_STATUS
+		FROM MESSENGER
+		JOIN MEMBER ON (SENDER = USER_NO)
+		WHERE RECEIVER = #{userNo}
+		AND RECV_DELETE='N'
+		ORDER BY RECV_DATE DESC
+  	</select>
+  	
+  	<!-- 보낸 쪽지 개수  -->
+  	<select id="sendListCount" resultType="_int">
+  		SELECT COUNT(*)
+  		FROM MESSENGER
+  		WHERE SENDER = #{userNo}
+  		AND SEND_DELETE = 'N'
+  	</select>
+  	
+  	<!-- 보낸 쪽지 목록 조회  -->
+  	<select id="selectSendList" resultMap="messengerResultSet">
+		SELECT MESSENGER_NO, USER_NAME AS RECEIVER, MSG_TITLE, SEND_DATE, READ_STATUS, EMC_STATUS
+		FROM MESSENGER
+		JOIN MEMBER ON (RECEIVER = USER_NO)
+		WHERE SENDER = #{userNo}
+		AND SEND_DELETE ='N'
+		ORDER BY SEND_DATE DESC
+  	</select>
+  	
+  	<!-- 삭제된 보낸 쪽지 개수  -->
+  	<select id="sendDeleteListCount" resultType="_int">
+  		SELECT COUNT(SEND_DELETE)
+		FROM MESSENGER
+		WHERE SENDER = #{userNo}
+		AND SEND_DELETE ='K'
+  	</select>
+  	
+  	<!-- 삭제된 받은 쪽지 개수  -->
+  	<select id="recvDeleteListCount" resultType="_int">
+		SELECT COUNT(RECV_DELETE)
+		FROM MESSENGER
+		WHERE RECEIVER =  #{userNo}
+		AND RECV_DELETE = 'K'
+  	</select>
+  	
+  	<!-- 휴지통 목록 조회  -->
+  	<select id="selectTrashList" resultMap="messengerResultSet">
+  		SELECT MESSENGER_NO, SM.USER_NAME SENDER, SM.USER_NO SENDER_UNO, RM.USER_NAME RECEIVER, RM.USER_NO RECVR_UNO,
+      		   MSG_TITLE, MSG_CONTENT,READ_STATUS,EMC_STATUS,SEND_DATE, SEND_DELETE, RECV_DELETE
+		FROM MESSENGER 
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE SENDER = #{userNo}
+		AND SEND_DELETE ='K'
+		UNION
+		SELECT MESSENGER_NO, SM.USER_NAME SENDER, SM.USER_NO SENDER_UNO, RM.USER_NAME RECEIVER, RM.USER_NO RECVR_UNO,
+      		   MSG_TITLE, MSG_CONTENT,READ_STATUS,EMC_STATUS,SEND_DATE, SEND_DELETE, RECV_DELETE
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE RECEIVER = #{userNo}
+		AND RECV_DELETE ='K'
+  	</select>
+  	
+  	<!-- 주소록에서 회원 검색 -->
+  	<select id="searchName" resultMap="searchMember" parameterType="hashmap">
+  		SELECT USER_NO,USER_ID, USER_NAME, DEPT_NAME, JOB_NAME
+		FROM MEMBER 
+		JOIN DEPARTMENT USING (DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE STATUS = 'Y'
+		<choose>
+			<when test="deptCode == '전체' and keyword != null ">
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="deptCode != '전체' and keyword != null">
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+				AND DEPT_CODE = #{deptCode}
+			</when>
+			<when test="deptCode != '전체'" >
+				AND DEPT_CODE = #{deptCode}
+			</when>
+		</choose>
+		ORDER BY JOB_CODE
+  	</select>
+  	
+  	<!-- 쪽지 발송  -->
+  	<insert id="insertMessage">
+  		INSERT INTO MESSENGER (MESSENGER_NO, SENDER, RECEIVER ,MSG_TITLE, MSG_CONTENT, EMC_STATUS)
+  		VALUES (SEQ_MSG.NEXTVAL,#{sender},#{receiver},#{msgTitle},#{msgContent},#{emcStatus})
+  	</insert>
+  	
+  	<!-- 쪽지 읽음 처리 -->
+  	<update id="updateReadStatus">
+  		UPDATE MESSENGER 
+  			SET READ_STATUS = 'Y'
+  			WHERE MESSENGER_NO = #{msgNo}
+  	</update>
+  	
+  	<!-- 쪽지 내용 조회 메소드 -->
+  	<select id="selectMessage" resultMap="messengerResultSet">
+  		SELECT MESSENGER_NO, RM.USER_NAME AS RECEIVER, RM.USER_NO AS RECVR_UNO, RM.USER_ID AS RECVR_ID,
+       		   SM.USER_NAME AS SENDER, SM.USER_NO AS SENDER_UNO, SM.USER_ID AS SENDER_ID,
+      		   MSG_TITLE, MSG_CONTENT,EMC_STATUS,SEND_DATE,RECV_DATE
+		FROM MESSENGER
+		JOIN MEMBER RM ON(RM.USER_NO = RECEIVER)
+		JOIN MEMBER SM ON(SM.USER_NO = SENDER)
+		WHERE MESSENGER_NO = #{msgNo}
+  	</select>
+  	
+  	<!-- 받은쪽지 휴지통으로 이동 메소드 -->
+  	<update id="recvMsgUpdate">
+  		UPDATE MESSENGER 
+			SET RECV_DELETE = CASE WHEN RECV_DELETE = 'N' THEN 'K'
+			                       WHEN RECV_DELETE = 'K' THEN 'Y'
+			                       END
+			WHERE MESSENGER_NO = #{msgNo}
+  	</update>
+  	
+  	<!-- 보낸 쪽지 휴지통으로 이동 메소드 -->
+  	<update id="sendMsgUpdate">
+  		UPDATE MESSENGER 
+			SET SEND_DELETE = CASE WHEN SEND_DELETE = 'N' THEN 'K'
+			                       WHEN SEND_DELETE = 'K' THEN 'Y'
+			                       END
+			WHERE MESSENGER_NO = #{msgNo}
+  	</update>
+  	
+  	<!-- 받은 쪽지 복구  -->
+  	<update id="recvMsgRecover">
+  		UPDATE MESSENGER 
+  			SET RECV_DELETE = 'N'
+  			WHERE RECV_DELETE ='K'
+  			AND MESSENGER_NO = #{msgNo}
+  	</update>
+  	
+  	<!-- 보낸 쪽지 복구 -->
+  	<update id="sendMsgRecover">
+  		UPDATE MESSENGER 
+  			SET SEND_DELETE = 'N'
+  			WHERE SEND_DELETE ='K'
+  			AND MESSENGER_NO = #{msgNo}
+  	</update>
+  	
+	<!-- 검색 게시글 개수 조회(받은 쪽지) -->
+	<select id="selectSearchListCount" resultType="_int" parameterType="hashmap">
+		SELECT COUNT(*)
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE RECV_DELETE = 'N'
+		AND RECEIVER = #{userNo}
+		<choose>
+			<when test="category == 'writer'">
+				AND SM.USER_NAME LIKE '%'||#{keyword}||'%' 
+			</when>
+			<when test="category == 'title'">
+				AND MSG_TITLE LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="category == 'date'">
+				AND RECV_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               	 			  AND TO_DATE(#{endDate},'YYYY-MM-DD')
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 조건별 검색 목록 조회 (받은 쪽지)-->
+	<select id="selectSearchList" resultMap="messengerResultSet" parameterType="hashmap">
+		SELECT MESSENGER_NO, SM.USER_NAME AS SENDER, MSG_TITLE, RECV_DATE, READ_STATUS, EMC_STATUS
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE RECV_DELETE = 'N'
+		AND RECEIVER = #{userNo}
+		<choose>
+			<when test="category == 'writer'">
+				AND SM.USER_NAME LIKE '%'||#{keyword}||'%' 
+			</when>
+			<when test="category == 'title'">
+				AND MSG_TITLE LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="category == 'date'">
+				AND RECV_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD')
+			</when>
+		</choose>
+		ORDER BY RECV_DATE DESC
+	</select>
+	
+	<!-- 조건별 검색 게시글 개수 조회(보낸 쪽지) -->
+	<select id="sendSearchListCount" parameterType="hashmap" resultType="_int">
+		SELECT COUNT(*)
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE SEND_DELETE = 'N'
+		AND SENDER = #{userNo}
+		<choose>
+			<when test="category == 'writer'">
+				AND RM.USER_NAME LIKE '%'||#{keyword}||'%' 
+			</when>
+			<when test="category == 'title'">
+				AND MSG_TITLE LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="category == 'date'">
+				AND SEND_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD')
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 조건별 검색 게시글 목록 조회(보낸쪽지) -->
+	<select id="sendSearchList" resultMap="messengerResultSet" parameterType="hashmap">
+		SELECT MESSENGER_NO, RM.USER_NAME AS RECEIVER, MSG_TITLE, SEND_DATE, READ_STATUS, EMC_STATUS
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE SEND_DELETE = 'N'
+		AND SENDER = #{userNo}
+			<choose>
+				<when test="category == 'writer'">
+					AND RM.USER_NAME LIKE '%'||#{keyword}||'%' 
+				</when>
+				<when test="category == 'title'">
+					AND MSG_TITLE LIKE '%'||#{keyword}||'%'
+				</when>
+				<when test="category == 'date'">
+				AND SEND_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD')
+				</when>
+			</choose>
+			ORDER BY SEND_DATE DESC
+	</select>	
+	
+	<!-- 조건별 검색 개수 조회(휴지통) -->
+	<select id="trashSearchListCount" parameterType="hashMap" resultType="_int">
+		SELECT COUNT(*)
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE (SENDER = #{userNo} OR RECEIVER = #{userNo})
+		AND (SEND_DELETE = 'K' OR RECV_DELETE ='K')
+		<choose>
+			<when test="category == 'receive'">
+				AND (RM.USER_NAME LIKE '%'||#{keyword}||'%' OR MSG_TITLE LIKE '%'||#{keyword}||'%')
+			</when>
+			<when test="category == 'send'">
+				AND (SM.USER_NAME LIKE '%'||#{keyword}||'%' OR MSG_TITLE LIKE '%'||#{keyword}||'%')
+			</when>
+			<when test="category == 'title'">
+				AND MSG_TITLE LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="category == 'date'">
+				AND (SEND_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD')
+               		 OR RECV_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD'))		  
+			</when>
+		</choose>	
+	</select>
+	
+	<select id="trashSearchList" resultMap="messengerResultSet" parameterType="hashmap">
+		SELECT MESSENGER_NO, SM.USER_NAME AS SENDER, SM.USER_NO AS SENDER_UNO , RM.USER_NAME AS RECEIVER, RM.USER_NO AS RECVR_UNO,
+       		   MSG_TITLE, RECV_DATE, SEND_DATE, READ_STATUS, EMC_STATUS
+		FROM MESSENGER
+		JOIN MEMBER SM ON (SENDER = SM.USER_NO)
+		JOIN MEMBER RM ON (RECEIVER = RM.USER_NO)
+		WHERE (SENDER = #{userNo} OR RECEIVER =#{userNo})
+		AND (SEND_DELETE = 'K' OR RECV_DELETE ='K')
+		<choose>
+			<when test="category == 'receive'">
+				AND RM.USER_NAME LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="category == 'send'">
+				AND SM.USER_NAME LIKE '%'||#{keyword}||'%' 
+			</when>
+			<when test="category == 'title'">
+				AND MSG_TITLE LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="category == 'date'">
+				AND (SEND_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD')
+               		 OR RECV_DATE BETWEEN TO_DATE(#{startDate},'YYYY-MM-DD')
+               				  AND TO_DATE(#{endDate},'YYYY-MM-DD'))		  
+			</when>
+		</choose>	
+		ORDER BY SEND_DATE DESC
+	</select>
+	
+	<!-- 읽지않은 쪽지 조회(받은 쪽지함) -->
+	<select id="selectCountRecvMsg" resultType="_int">
+		SELECT COUNT(*)
+		FROM MESSENGER
+		WHERE RECEIVER = 7
+		AND RECV_DELETE ='N'
+		AND READ_STATUS ='N'
+	</select>
+</mapper>

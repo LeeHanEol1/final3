@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="memberMapper">
+	<resultMap type="member" id="memberResultSet">
+		<result column="USER_NO" property="userNo"/>
+	 	<result column="USER_ID" property="userId"/>
+	 	<result column="USER_NAME" property="userName"/>
+	 	<result column="USER_PWD" property="userPwd"/>
+	 	<result column="PHONE" property="phone"/>
+	 	<result column="EMAIL" property="email"/>
+	 	<result column="ADDRESS" property="address"/>
+	 	<result column="BIRTH" property="birth"/>
+	 	<result column="DEPT_CODE" property="deptCode"/>
+	 	<result column="JOB_CODE" property="jobCode"/>
+	 	<result column="EMPOLYMENT_DATE" property="empolymentDate"/>
+	 	<result column="DEPATURE_DATE" property="depatureDate"/>
+	 	<result column="AUTH" property="auth"/>
+	 	<result column="ENABLED" property="enabled"/>
+	 	<result column="STATUS" property="status"/>
+	 	<result column="DEPT_NAME" property="deptName"/>
+	 	<result column="JOB_Name" property="jobName"/>
+	</resultMap>
+	
+	<resultMap type="memberAttachment" id="memberAttachmentResultSet">
+		<result column="MEM_ATTACHMENT_NO" property="memAttachmentNo"/>
+		<result column="REF_UNO" property="refUno"/>
+		<result column="ORIGIN_NAME" property="originName"/>
+		<result column="CHANGE_NAME" property="changeName"/>
+		<result column="FILE_PATH" property="filePath"/>
+		<result column="STATUS" property="status"/>
+	</resultMap>
+
+	<insert id="insertAdmin" parameterType="member">
+		INSERT INTO MEMBER(USER_NO, USER_ID, USER_NAME, USER_PWD, PHONE, EMAIL, ADDRESS, BIRTH, DEPT_CODE, JOB_CODE,
+							EMPOLYMENT_DATE, DEPATURE_DATE, AUTH, ENABLED)
+		VALUES(SEQ_UNO.NEXTVAL, #{userId}, '관리자', #{userPwd}, '010-0000-0000', 'ADMIN@NAVER.COM', '서울/영등포', SYSDATE, 'D1', 'J1', SYSDATE, SYSDATE, 'ROLE_ADMIN', 1)
+	</insert>
+	
+	<!-- 아이디로 회원 조회 -->
+	<select id="selectMemberById" resultMap="memberResultSet">
+		SELECT USER_NO, USER_ID, USER_NAME, USER_PWD, PHONE, EMAIL, ADDRESS, TO_CHAR(BIRTH, 'YYMMDD') AS BIRTH, DEPT_NAME, JOB_NAME,DEPT_CODE,
+												EMPOLYMENT_DATE, DEPATURE_DATE, AUTH, ENABLED
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE USER_ID = #{userId}
+		AND STATUS = 'Y'
+	</select>
+	
+	<!-- 회원 총 개수 -->
+	<select id="selectListCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)		
+		WHERE STATUS = 'Y'
+		<choose>
+			<when test="category == 'name'">
+				AND USER_NAME
+				LIKE '%'||#{searchWord}||'%'
+			</when>
+			<when test="category == 'dept'">
+				AND DEPT_NAME
+				LIKE '%'||#{searchWord}||'%'
+			</when>
+			<when test="category == 'job'">
+				AND JOB_NAME
+				LIKE '%'||#{searchWord}||'%'
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 회원 조회 -->
+	<select id="selectList" resultMap="memberResultSet">
+		SELECT *
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE STATUS = 'Y'
+		<choose>
+			<when test="category == 'name'">
+				AND USER_NAME
+				LIKE '%'||#{searchWord}||'%'
+			</when>
+			<when test="category == 'dept'">
+				AND DEPT_NAME
+				LIKE '%'||#{searchWord}||'%'
+			</when>
+			<when test="category == 'job'">
+				AND JOB_NAME
+				LIKE '%'||#{searchWord}||'%'
+			</when>
+		</choose>
+		ORDER BY ${currentStatus}
+	</select>
+	
+	<!-- 회원 번호로 회원 찾기 -->
+	<select id="selectMemberByUserNo" resultMap="memberResultSet">
+		SELECT USER_NO, USER_ID, USER_NAME, USER_PWD, PHONE, EMAIL, ADDRESS, TO_CHAR(BIRTH, 'YYYY-MM-DD') AS BIRTH, DEPT_NAME, JOB_NAME,
+												TO_CHAR(EMPOLYMENT_DATE, 'YYYY-MM-DD') AS EMPOLYMENT_DATE, DEPATURE_DATE, AUTH, ENABLED
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE USER_NO = #{userNo}
+		AND STATUS = 'Y'
+	</select>
+	
+	<update id="updateMember" parameterType="member">
+		UPDATE MEMBER
+		SET USER_NAME = #{userName}, PHONE = #{phone}, EMAIL = #{email}, ADDRESS = #{address}, BIRTH = #{birth}
+		WHERE USER_NO = #{userNo}
+	</update>
+	
+	<update id="updateMemberAttachment" parameterType="memberAttachment">
+		UPDATE MEMBER_ATTACHMENT
+		SET ORIGIN_NAME = #{originName}, CHANGE_NAME = #{changeName}, FILE_PATH = #{filePath}
+		WHERE REF_UNO = #{refUno}
+	</update>
+	
+	<insert id="insertMemberAttachment">
+		INSERT INTO MEMBER_ATTACHMENT(MEM_ATTACHMENT_NO, REF_UNO, ORIGIN_NAME, CHANGE_NAME, FILE_PATH)
+		VALUES(SEQ_MANO.NEXTVAL, #{refUno}, #{originName}, #{changeName}, #{filePath})
+	</insert>
+	
+	<!-- 회원가입 -->
+	<insert id="insertMember" parameterType="member">
+		INSERT INTO MEMBER(USER_NO, USER_ID, USER_NAME, USER_PWD, PHONE, EMAIL, ADDRESS, BIRTH, DEPT_CODE, JOB_CODE,
+							EMPOLYMENT_DATE, DEPATURE_DATE, AUTH, ENABLED)
+		VALUES(SEQ_UNO.NEXTVAL, #{userId}, #{userName}, #{userPwd}, #{phone}, #{email}, #{address}, #{birth}, #{deptCode}, #{jobCode},
+								#{empolymentDate}, #{depatureDate}, #{auth}, 1)
+	</insert>
+	
+	<select id="selectMemberAttachment" resultMap="memberAttachmentResultSet">
+		SELECT *
+		FROM MEMBER_ATTACHMENT
+		WHERE REF_UNO = #{userNo}
+	</select>
+	
+	<update id="updatePwd">
+		UPDATE MEMBER
+		SET USER_PWD = #{userPwd}
+		WHERE USER_NO = #{userNo}
+	</update>
+	
+	<update id="updateOther">
+		UPDATE MEMBER
+		SET DEPT_CODE = #{deptCode}, JOB_CODE = #{jobCode}, DEPATURE_DATE = #{depatureDate}, AUTH = #{auth}
+		WHERE USER_NO = #{userNo}
+	</update>
+	
+	<update id="deleteMember">
+		UPDATE MEMBER
+		SET STATUS = 'N'
+		WHERE USER_NO = #{userNo}
+	</update>
+	
+	<!-- customUserDetails 관련 -->
+	<resultMap type="com.kh.final3.member.model.vo.CustomUserDetails" id="customUserSet">
+	 	<result column="USER_ID" property="userId"/>
+	 	<result column="USER_PWD" property="userPwd"/>
+	 	<result column="AUTH" property="auth"/>
+	 	<result column="USER_NO" property="userNo"/>
+	 	<result column="USER_NAME" property="userName"/>
+	 	<result column="PHONE" property="phone"/>
+	 	<result column="EMAIL" property="email"/>
+	 	<result column="ADDRESS" property="address"/>
+	 	<result column="BIRTH" property="birth"/>
+	 	<result column="DEPT_CODE" property="deptCode"/>
+	 	<result column="JOB_CODE" property="jobCode"/>
+	 	<result column="EMPOLYMENT_DATE" property="empolymentDate"/>
+	 	<result column="DEPATURE_DATE" property="depatureDate"/>
+	 	<result column="ENABLED" property="enabled"/>
+	 	<result column="STATUS" property="status"/>
+	 	<result column="DEPT_NAME" property="deptName"/>
+	 	<result column="JOB_Name" property="jobName"/>
+	</resultMap>
+	
+	<select id="selectMember" parameterType="String" resultMap="customUserSet">
+		SELECT *
+		FROM MEMBER
+		WHERE USER_ID = #{userId}
+		AND STATUS = 'Y'
+	</select>
+	
+</mapper>

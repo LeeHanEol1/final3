@@ -1,0 +1,114 @@
+@charset "UTF-8";
+	div{
+		    box-sizing: border-box;
+		}
+    .approval{
+        width: 1570px;
+        margin: auto;
+    }
+    .approval>div{
+    	width: 100%
+    }
+	/*검색영역*/
+    #approval-search-area>form{
+        width: 100%;
+        margin:auto;
+        margin-top:20px;
+    }
+    
+    #option-box{
+        width: 40%;
+        float: left;
+    }
+    
+    #search-box{
+        width: 60%;
+        float: left;
+    }
+	#search_code{
+        margin-left: 5px;
+    }
+    #search-input{
+        width: 30%;
+        float: left;
+    }
+   /*navibar*/
+	#approval-tap-area{
+		width: 100%;
+		margin: auto;
+	}
+	
+	#approval-tap-area>ul{
+		width:100%;
+		height : 42px;
+		list-style-type : none;
+		margin-bottom: 30px;
+	}
+	
+	#nav-tabs{
+		padding : 0;
+		display: flex;
+	}
+	
+    #approval-tap-area>ul li{
+    	width :98px;
+    	margin-right: 5px;
+    	float : left;
+    }
+    
+    #approval-tap-area a{
+    	width: 100%;
+    	height : 100%;
+    	display: inline-block;
+    	text-align: center;
+    	line-height: 40px;
+    	background-color: lightgrey;
+    	text-decoration: none;
+    	color: black;
+    }
+    #approval-tap-area>ul li:not(.active):hover{
+	    border-top: 1px solid #dee2e6;
+		border-left: 1px solid #dee2e6;
+		border-right: 1px solid #dee2e6;
+		border-top-left-radius:0.25rem;
+		border-top-right-radius:0.25rem; 
+	}
+	#approval-tap-area .active a{
+		 border-botton: none;
+		 background-color: #0E6251;
+		 color: white;
+	}
+	 /* 결재목록영역 */
+    #approval-list-area{
+        width: 100%;
+        margin: auto;
+        margin-top : 20px;
+    }
+    /* 결재목록 테이블 */
+    #approval-list th, td{
+        text-align:center;
+    }
+	#approval-list>tbody tr{
+		cursor: pointer; 
+	} 
+    #pagingArea {
+        width:fit-content; 
+        margin:auto;
+    }
+    /* 결재문서 작성버튼 */
+   #approvalEnroll-btn{
+   		margin-right: 200px;
+   		text-align: right;
+   }
+   #approvalEnroll-btn > a{
+   		background-color: #0E6251;
+   		color: white;
+   		border : 0;
+   		
+   }
+   #approval-tap-area, #approval-pagebar-area, #search_code, th{
+   		font-family: 'KimjungchulGothic-Bold';
+   }
+   td {
+   		font-family: 'HallymGothic-Regular';
+   }

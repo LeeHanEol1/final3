@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="freeForumMapper">
+	<resultMap type="board" id="boardResultSet">
+	  	<result column="BOARD_NO" property="boardNo"/>
+	  	<result column="BOARD_WRITER" property="boardWriter"/>
+	  	<result column="CATEGORY_CODE" property="categoryCode"/>
+	  	<result column="BOARD_TITLE" property="boardTitle"/>
+	  	<result column="BOARD_CONTENT" property="boardContent"/>
+	  	<result column="CREATE_DATE" property="createDate"/>
+	  	<result column="MODIFY_DATE" property="modifyDate"/>
+	  	<result column="COUNT" property="count"/>
+	  	<result column="IMPORTANCE_LEVEL" property="importanceLevel"/>
+	  	<result column="ATTACHMENT_NO" property="attachmentNo"/>
+	  	<result column="CATEGORY_NAME" property="categoryName"/>
+	  	<result column="RECOMMEND_COUNT" property="recommendCount"/>
+	  	<result column="REF_MID" property="refMid"/>
+ 	</resultMap>
+ 	
+	<resultMap type="attachment" id="attachmentResultSet">
+		<result column="ATTACHMENT_NO" property="attachmentNo"/>
+		<result column="REF_BNO" property="refBno"/>
+		<result column="ORIGIN_NAME" property="originName"/>
+		<result column="CHANGE_NAME" property="changeName"/>
+		<result column="FILE_PATH" property="filePath"/>
+	</resultMap>
+	
+	<resultMap type="reply" id="replyResultSet">
+		<result column="REPLY_NO" property="replyNo"/>
+		<result column="REF_BNO" property="refBno"/>
+		<result column="REPLY_WRITER" property="replyWriter"/>
+		<result column="REPLY_CONTENT" property="replyContent"/>
+		<result column="CREATE_DATE" property="createDate"/>
+	</resultMap>
+ 	
+ 	<select id="selectListCount" resultType="_int">
+ 		<choose>
+ 			<when test="currentStatus == 'popularity'">
+		 		SELECT COUNT(*)
+		 		FROM (SELECT REF_BNO, COUNT(*)
+		              FROM RECOMMEND R
+		              JOIN BOARD B ON(B.BOARD_NO = R.REF_BNO)
+		              WHERE B.STATUS = 'Y'
+		              AND (CATEGORY_CODE = 'B4' OR CATEGORY_CODE = 'B5' OR CATEGORY_CODE = 'B6')
+		              GROUP BY R.REF_BNO
+		              <![CDATA[HAVING COUNT(*) > 1]]>)
+ 			</when>
+ 			<otherwise>
+		 		SELECT COUNT(*)
+		 		FROM BOARD
+		 		WHERE STATUS = 'Y'
+		 		AND (CATEGORY_CODE = 'B4' OR CATEGORY_CODE = 'B5' OR CATEGORY_CODE = 'B6')
+		 		<choose>
+					<when test="category == 'title'">
+						AND BOARD_TITLE
+						LIKE '%'||#{searchWord}||'%'
+					</when>
+					<when test="category == 'writer'">
+						AND USER_ID
+						LIKE '%'||#{searchWord}||'%'
+					</when>
+				</choose>
+				<choose>
+					<when test="currentWriterNo != null">
+						AND BOARD_WRITER = #{currentWriterNo}
+					</when>
+				</choose>
+ 			</otherwise>
+ 		</choose>
+ 	</select>
+ 	
+ 	<select id="selectList" resultMap="boardResultSet">
+ 		<choose>
+ 			<when test="currentStatus == 'popularity'">
+		        SELECT BOARD_NO, BOARD_TITLE, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD HH24:MI') AS CREATE_DATE, COUNT, CATEGORY_NAME, USER_NAME AS BOARD_WRITER, COUNT(*) AS RECOMMEND_COUNT
+		        FROM (SELECT *
+		              FROM RECOMMEND R
+		              JOIN BOARD B ON(R.REF_BNO = B.BOARD_NO)
+		              JOIN MEMBER M ON(B.BOARD_WRITER = M.USER_NO)
+		              JOIN BOARD_CATEGORY BC ON(B.CATEGORY_CODE = BC.CATEGORY_CODE)
+		              WHERE B.STATUS='Y'
+		              AND (BC.CATEGORY_CODE = 'B4' OR BC.CATEGORY_CODE = 'B5' OR BC.CATEGORY_CODE = 'B6')
+		              ORDER BY BOARD_NO DESC)
+		        GROUP BY BOARD_NO, BOARD_TITLE, CREATE_DATE, COUNT, CATEGORY_NAME, USER_NAME
+		        <![CDATA[HAVING COUNT(*) > 1]]>
+ 			</when>
+ 			<otherwise>
+		        SELECT BOARD_NO, BOARD_TITLE, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD HH24:MI') AS CREATE_DATE, COUNT, CATEGORY_NAME, USER_NAME AS BOARD_WRITER, COUNT(REF_BNO) AS RECOMMEND_COUNT
+		        FROM (SELECT *
+		              FROM RECOMMEND R
+		              RIGHT JOIN BOARD B ON(R.REF_BNO = B.BOARD_NO)
+		              JOIN MEMBER M ON(B.BOARD_WRITER = M.USER_NO)
+		              JOIN BOARD_CATEGORY BC ON(B.CATEGORY_CODE = BC.CATEGORY_CODE)
+		              WHERE B.STATUS='Y'
+		              AND (BC.CATEGORY_CODE = 'B4' OR BC.CATEGORY_CODE = 'B5' OR BC.CATEGORY_CODE = 'B6')
+					  <choose>
+					  	<when test="currentWriter != null">
+					  		AND M.USER_ID = #{currentWriter}
+					  	</when>
+					  </choose>
+		              )
+				<choose>
+					<when test="category == 'title'">
+						WHERE BOARD_TITLE
+						LIKE '%'||#{searchWord}||'%'
+					</when>
+					<when test="category == 'writer'">
+						WHERE USER_ID
+						LIKE '%'||#{searchWord}||'%'
+					</when>
+				</choose>
+		        GROUP BY BOARD_NO, BOARD_TITLE, CREATE_DATE, COUNT, CATEGORY_NAME, USER_NAME
+                ORDER BY BOARD_NO DESC
+ 			</otherwise>
+ 		</choose>
+ 	</select>
+ 	
+ 	<select id="selectForumDetailsByNo" resultMap="boardResultSet">
+		SELECT BOARD_NO, BOARD_TITLE, USER_ID AS REF_MID, BOARD_CONTENT, CREATE_DATE, COUNT, CATEGORY_CODE, CATEGORY_NAME, USER_NAME AS BOARD_WRITER
+		FROM BOARD B
+		JOIN BOARD_CATEGORY USING(CATEGORY_CODE)
+        JOIN MEMBER M ON(B.BOARD_WRITER = M.USER_NO)
+		WHERE B.BOARD_NO = #{boardNo}
+ 	</select>
+ 	
+ 	<select id="selectAttachmentList" resultMap="attachmentResultSet">
+ 		SELECT *
+ 		FROM BOARD_ATTACHMENT
+ 		WHERE REF_BNO = #{boardNo}
+ 	</select>
+ 	
+ 	<update id="increaseForumCount" parameterType="_int">
+ 		UPDATE BOARD
+ 		SET COUNT = COUNT+1
+ 		WHERE BOARD_NO = #{boardNo}
+ 		AND STATUS = 'Y'
+ 	</update>
+ 	
+ 	<insert id="insertForum">
+ 		INSERT INTO BOARD
+ 		VALUES(SEQ_BNO.NEXTVAL, #{boardWriter}, #{categoryCode}, #{boardTitle}, #{boardContent}, SYSDATE, #{modifyDate}, #{count}, 'Y', 'R')
+ 	</insert>
+ 	
+ 	<select id="checkRecommend" resultType="_int">
+ 		SELECT COUNT(*)
+ 		FROM RECOMMEND
+ 		WHERE REF_BNO = #{boardNo}
+ 		AND REF_UNO = #{userNo}
+ 	</select>
+ 	
+ 	<update id="insertRecommend">
+ 		INSERT INTO RECOMMEND(REF_BNO, REF_UNO)
+ 		VALUES(#{boardNo}, #{userNo})
+ 	</update>
+ 	
+ 	<select id="selectRecommendCount" resultType="_int">
+ 		SELECT COUNT(*)
+ 		FROM RECOMMEND
+ 		WHERE REF_BNO = #{boardNo}
+ 	</select>
+ 	
+ 	<select id="checkDeprecated" resultType="_int">
+ 		SELECT COUNT(*)
+ 		FROM DEPRECATED
+ 		WHERE REF_BNO = #{boardNo}
+ 		AND REF_UNO = #{userNo}
+ 	</select>
+ 	
+ 	<update id="insertDeprecated">
+ 		INSERT INTO DEPRECATED(REF_BNO, REF_UNO)
+ 		VALUES(#{boardNo}, #{userNo})
+ 	</update>
+ 	
+ 	<select id="selectDeprecatedCount" resultType="_int">
+ 		SELECT COUNT(*)
+ 		FROM DEPRECATED
+ 		WHERE REF_BNO = #{boardNo}
+ 	</select>
+ 	
+ 	<insert id="insertReply" parameterType="reply">
+ 		INSERT INTO REPLY(REPLY_NO, REF_BNO, REPLY_WRITER, REPLY_CONTENT)
+ 		VALUES(SEQ_RNO.NEXTVAL, #{refBno}, #{replyWriter}, #{replyContent})
+ 	</insert>
+ 	
+ 	<select id="selectReplyList" resultMap="replyResultSet">
+ 		SELECT REPLY_NO, REF_BNO, USER_NAME AS REPLY_WRITER, REPLY_CONTENT, TO_CHAR(CREATE_DATE, 'YYYY-MM-DD HH24:MI') AS CREATE_DATE
+ 		FROM REPLY R
+        JOIN MEMBER M ON(R.REPLY_WRITER = M.USER_NO)
+ 		WHERE R.STATUS = 'Y'
+ 		<choose>
+ 			<when test="boardNo != null">
+		 		AND REF_BNO = #{boardNo} 			
+ 			</when>
+ 			<otherwise>
+ 				AND REPLY_WRITER = #{userNo}
+ 			</otherwise>
+ 		</choose>
+ 	</select>
+ 	
+ 	<select id="selectReplyCount" resultType="_int">
+ 		SELECT COUNT(*)
+ 		FROM REPLY
+ 		<choose>
+ 			<when test="boardNo != null">
+		 		WHERE REF_BNO = #{boardNo}
+ 			</when>
+ 			<otherwise>
+ 				WHERE REPLY_WRITER = #{userNo}
+ 			</otherwise>
+ 		</choose>
+ 	</select>
+ 	
+ 	<update id="updateForum">
+ 		UPDATE BOARD
+ 		SET CATEGORY_CODE = #{categoryCode}, BOARD_TITLE = #{boardTitle}, BOARD_CONTENT = #{boardContent}, MODIFY_DATE = SYSDATE
+ 		WHERE BOARD_NO = #{boardNo}
+ 	</update>
+ 	
+	<update id="deleteForum">
+		UPDATE BOARD
+		SET STATUS = 'N'
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	<update id="updateReply">
+		UPDATE REPLY
+		SET REPLY_CONTENT = #{replyContent}, MODIFY_DATE = SYSDATE
+		WHERE REPLY_NO = #{replyNo}
+	</update>
+	
+	<update id="deleteReply">
+		UPDATE REPLY
+		SET STATUS = 'N'
+		WHERE REPLY_NO = #{replyNo}
+	</update>
+</mapper>

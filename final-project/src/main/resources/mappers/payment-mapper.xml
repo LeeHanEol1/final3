@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="paymentMapper">
+	
+	<resultMap type="member" id="paymentMemberResultSet">
+		<result column="USER_NO" property="userNo"/>
+	 	<result column="USER_ID" property="userId"/>
+	 	<result column="USER_NAME" property="userName"/>
+	 	<result column="USER_PWD" property="userPwd"/>
+	 	<result column="PHONE" property="phone"/>
+	 	<result column="EMAIL" property="email"/>
+	 	<result column="ADDRESS" property="address"/>
+	 	<result column="BIRTH" property="birth"/>
+	 	<result column="DEPT_CODE" property="deptCode"/>
+	 	<result column="JOB_CODE" property="jobCode"/>
+	 	<result column="EMPOLYMENT_DATE" property="empolymentDate"/>
+	 	<result column="DEPATURE_DATE" property="depatureDate"/>
+	 	<result column="AUTH" property="auth"/>
+	 	<result column="ENABLED" property="enabled"/>
+	 	<result column="STATUS" property="status"/>
+	 	<result column="DEPT_NAME" property="deptName"/>
+	 	<result column="JOB_NAME" property="jobName"/>
+	 	<result column="BANK" property="bank"/>
+	 	<result column="ACCOUNT_NUMBER" property="accountNumber"/>
+	 	<result column="ACCOUNT_STATUS" property="accountStatus"/>
+	</resultMap>
+	
+	<resultMap type="payment" id="paymentResultSet">
+		<result column="PAY_NO" property="payNo"/>
+		<result column="USER_NO" property="userNo"/>
+		<result column="MONTHLY" property="monthly"/>
+		<result column="SALARY" property="salary"/>
+		<result column="MEALS" property="meals"/>
+		<result column="OVERTIME_PAY" property="overtimePay"/>
+		<result column="HOLIDAY_PAY" property="holidayPay"/>
+		<result column="ANNUAL_LEAVE_PAY" property="annualLeavePay"/>
+		<result column="OTHER_PAY" property="otherPay"/>
+		<result column="NATIONAL_PENSION" property="nationalPension"/>
+		<result column="HEALTH_INSURANCE" property="healthInsurance"/>
+		<result column="EMP_INSURANCE" property="empInsurance"/>
+		<result column="LNG_INSURANCE" property="lngInsurance"/>
+		<result column="USER_NAME" property="userName"/>
+		<result column="DEPT_NAME" property="deptName"/>
+	 	<result column="JOB_NAME" property="jobName"/>
+	</resultMap> 
+	
+	<!-- 전체 회원수 조회 -->
+	<select id="selectMemberCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM MEMBER
+		WHERE STATUS ='Y'
+	</select>
+	
+	<!-- 회원 목록 조회  -->
+	<select id="selectMemberList" resultMap="paymentMemberResultSet">
+		SELECT USER_NO, USER_NAME, USER_ID, EMAIL, TO_CHAR(BIRTH, 'YYYY-MM-DD')AS BIRTH, JOB_NAME, DEPT_NAME, TO_CHAR(EMPOLYMENT_DATE,'YYYY-MM-DD') AS EMPOLYMENT_DATE
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE STATUS = 'Y'
+		ORDER BY JOB_CODE
+	</select>
+	
+	<!-- 회원 기본 정보 조회 -->
+	<select id="selectMemberInfo" resultMap="paymentMemberResultSet">
+		SELECT USER_NO, USER_NAME, DEPT_NAME, JOB_NAME, TO_CHAR(EMPOLYMENT_DATE,'YYYY-MM-DD') AS EMPOLYMENT_DATE, BANK, ACCOUNT_NUMBER
+		FROM MEMBER
+		LEFT JOIN DEPARTMENT USING(DEPT_CODE)
+		LEFT JOIN JOB USING(JOB_CODE)
+		WHERE USER_NO = #{userNo}
+		AND ACCOUNT_STATUS ='Y'
+	</select>
+	
+	<!-- 월별 비교 메소드 -->
+	<select id="compareMonthly" resultType="_int" parameterType="hashmap">
+		SELECT COUNT(MONTHLY)
+		FROM (SELECT SUBSTR(TO_CHAR(MONTHLY,'YYYY-MM-DD'),1,7) AS MONTHLY
+      		  FROM PAYMENT
+     		  WHERE USER_NO = #{userNo}) 
+		WHERE MONTHLY LIKE '%'||#{month}||'%'
+	</select>
+	
+	<!-- 급여 입력 -->
+	<insert id="insertPayment">
+		INSERT INTO PAYMENT (PAY_NO, USER_NO, MONTHLY, SALARY, MEALS, OVERTIME_PAY, HOLIDAY_PAY, ANNUAL_LEAVE_PAY, OTHER_PAY)
+				VALUES(SEQ_PAY.NEXTVAL, #{userNo}, #{monthly},#{salary},#{meals}, #{overtimePay},#{holidayPay},#{annualLeavePay},#{otherPay})
+	</insert>
+	
+	<!-- 급여 목록 조회  -->
+	<select id="selectPaymentList" resultMap="paymentResultSet">
+		SELECT PAY_NO, USER_NO, USER_NAME, DEPT_NAME, JOB_NAME, TO_CHAR(MONTHLY,'YYYY-MM-DD') AS MONTHLY
+		FROM PAYMENT
+		JOIN MEMBER USING(USER_NO)
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE USER_NO = #{userNo}
+	</select>
+	
+	<!-- 급여계좌 미등록, 변경 신청 관리 -->
+	<select id="selectAccount" resultType="_int">
+		SELECT COUNT(ACCOUNT_STATUS)
+		FROM MEMBER
+		WHERE STATUS = 'Y'
+	</select> 
+	
+	<!-- 급여계좌 미등록,변경 신청 회원 목록 조회 -->
+	<select id="selectAccoutList" resultMap="paymentMemberResultSet">
+		SELECT USER_NO, USER_NAME,USER_ID,EMAIL,DEPT_NAME, JOB_NAME ,BANK, ACCOUNT_NUMBER, ACCOUNT_STATUS
+		FROM MEMBER 
+		LEFT JOIN DEPARTMENT USING (DEPT_CODE)
+		LEFT JOIN JOB USING (JOB_CODE)
+		WHERE STATUS = 'Y'
+	</select>
+	
+	<!-- 검색 필터에 해당하는 회원 수 조회 -->
+	<select id ="selectSearchMemberCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM MEMBER
+		WHERE STATUS = 'Y'
+		<choose>
+			<when test="deptCode == '전체' and keyword != null" >
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="deptCode != '전체' and keyword == null">
+				AND DEPT_CODE = #{deptCode}		
+			</when>	
+			<when test="deptCode != '전체'">
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+				AND DEPT_CODE = #{deptCode}		
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 검색 필터 해당 하는 회원수 목록 조회  -->
+	<select id="selectSearchMemberList" resultMap="paymentMemberResultSet">
+		SELECT USER_NO, USER_NAME, USER_ID, EMAIL, TO_CHAR(BIRTH, 'YYYY-MM-DD')AS BIRTH, JOB_NAME, DEPT_NAME, TO_CHAR(EMPOLYMENT_DATE,'YYYY-MM-DD') AS EMPOLYMENT_DATE
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE STATUS = 'Y'
+		<choose>
+			<when test="deptCode == '전체' and keyword != null" >
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test="deptCode != '전체' and keyword ==null">
+				AND DEPT_CODE = #{deptCode}		
+			</when>	
+			<when test="deptCode != '전체'">
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+				AND DEPT_CODE = #{deptCode}		
+			</when>
+		</choose>
+		ORDER BY JOB_CODE 
+	</select>
+	
+	<!-- 계좌 등록/변경 신청 메소드  -->
+	<update id="insertAccount">
+		UPDATE MEMBER 
+				SET BANK = #{bank},
+					ACCOUNT_NUMBER = #{accountNumber},
+					ACCOUNT_STATUS = 'P'
+				WHERE USER_NO = #{userNo}	
+	</update>
+	
+	<!-- 급여 월별 조회 메소드 -->
+	<select id="monthPayment" resultMap="paymentResultSet">
+		SELECT PAY_NO, TO_CHAR(MONTHLY,'YYYY-MM') AS MONTHLY, SALARY, MEALS, OVERTIME_PAY, HOLIDAY_PAY, ANNUAL_LEAVE_PAY, OTHER_PAY, 
+       		   (SALARY* NATIONAL_PENSION)/2 AS NATIONAL_PENSION , (SALARY * HEALTH_INSURANCE) AS HEALTH_INSURANCE, 
+      		   (SALARY* EMP_INSURANCE) AS EMP_INSURANCE , (SALARY*LNG_INSURANCE) AS LNG_INSURANCE
+		FROM PAYMENT
+		WHERE USER_NO = #{userNo}
+		AND TO_CHAR(MONTHLY,'YYYY-MM-DD') LIKE '%'||#{monthly}||'%'
+	</select>
+	
+	<!-- 최근 등록 급여 조회 메소드  -->
+	<select id="newestPayment" resultMap="paymentResultSet">
+	SELECT *
+	FROM (SELECT PAY_NO, TO_CHAR(MONTHLY,'YYYY-MM') AS MONTHLY, SALARY, MEALS, OVERTIME_PAY, HOLIDAY_PAY, ANNUAL_LEAVE_PAY, OTHER_PAY, 
+	       (SALARY* NATIONAL_PENSION)/2 AS NATIONAL_PENSION , (SALARY * HEALTH_INSURANCE) AS HEALTH_INSURANCE, 
+	       (SALARY* EMP_INSURANCE) AS EMP_INSURANCE , (SALARY*LNG_INSURANCE) AS LNG_INSURANCE
+	      FROM PAYMENT
+	      WHERE USER_NO = 7
+	      ORDER BY MONTHLY DESC)
+	WHERE ROWNUM =1 
+	</select>
+	
+	<!-- 계좌 등록 메소드 -->
+	<update id="updateAccount">
+		UPDATE MEMBER 
+     		SET ACCOUNT_STATUS = 'Y'
+     	WHERE USER_NO = #{userNo}
+     	AND ACCOUNT_STATUS ='P'
+	</update>
+	
+	<!-- 급여계좌 관리 검색필터 개수 조회 -->
+	<select id="accountSearch" resultType="_int" parameterType="hashmap">
+		SELECT COUNT(*)
+		FROM MEMBER
+		JOIN DEPARTMENT USING (DEPT_CODE)
+		WHERE STATUS ='Y'
+		<choose>
+			<when test="status == '전체' ">
+				AND (USER_NAME LIKE '%'||#{keyword}||'%' OR DEPT_NAME LIKE '%'||#{keyword}||'%')
+			</when>
+			<when test="status != '전체' and keyword != null ">
+				AND ACCOUNT_STATUS = #{status}
+				AND (USER_NAME LIKE '%'||#{keyword}||'%' OR DEPT_NAME LIKE '%'||#{keyword}||'%')
+			</when>
+		</choose>
+	
+	</select>
+	
+	<!-- 급여계좌 관리 검색필터 목록 조회  -->
+	<select id="accountSearchList" resultMap="paymentMemberResultSet" parameterType="hashmap">
+		SELECT USER_NO, USER_NAME,USER_ID,EMAIL,DEPT_NAME, JOB_NAME ,BANK, ACCOUNT_NUMBER, ACCOUNT_STATUS
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE STATUS ='Y'
+		<choose>
+			<when test="status == '전체' ">
+				AND (USER_NAME LIKE '%'||#{keyword}||'%' OR DEPT_NAME LIKE '%'||#{keyword}||'%')
+			</when>
+			<when test="status != '전체' and keyword != null ">
+				AND ACCOUNT_STATUS = #{status}
+				AND (USER_NAME LIKE '%'||#{keyword}||'%' OR DEPT_NAME LIKE '%'||#{keyword}||'%')
+			</when>
+		</choose>
+		ORDER BY USER_NO DESC
+	</select>
+</mapper>

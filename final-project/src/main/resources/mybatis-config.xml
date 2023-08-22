@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-config.dtd">
+  <configuration>
+  		<settings>
+  			<setting name="jdbcTypeForNull" value="NULL"/>
+  		</settings>
+  		<typeAliases>
+  			<typeAlias type="com.kh.final3.board.model.vo.Board" alias="board"/>
+  			<typeAlias type="com.kh.final3.board.model.vo.BoardAttachment" alias="attachment"/>
+  			<typeAlias type="com.kh.final3.member.model.vo.Member" alias="member"/>
+  			<typeAlias type="com.kh.final3.approval.model.vo.Approval" alias="approval"/>
+  			<typeAlias type="com.kh.final3.approval.model.vo.ApprovalAttachment" alias="approvalAttachment"/>
+  			<typeAlias type="com.kh.final3.board.model.vo.Reply" alias="reply"/>
+  			<typeAlias type="com.kh.final3.board.model.vo.Reservation" alias="reservation"/>
+  			<typeAlias type="com.kh.final3.approval.model.vo.ApprovalDoc" alias="approvalDoc"/>
+  			<typeAlias type="com.kh.final3.messenger.model.vo.Messenger" alias="messenger"/>
+  			<typeAlias type="com.kh.final3.approval.model.vo.Item" alias="item"/>
+  			<typeAlias type="com.kh.final3.approval.model.vo.Leave" alias="leave"/>
+  			<typeAlias type="com.kh.final3.approval.model.vo.DocType" alias="docType"/>
+  			<typeAlias type="com.kh.final3.email.model.vo.Email" alias="email"/>
+  			<typeAlias type="com.kh.final3.attendance.model.vo.Attendance" alias="attendance"/>
+  			<typeAlias type="com.kh.final3.attendance.model.vo.Record" alias="record"/>
+  			<typeAlias type="com.kh.final3.attendance.model.vo.AttRequest" alias="attRequest"/>
+  			<typeAlias type="com.kh.final3.schedule.model.vo.Schedule" alias="schedule"/>
+  			<typeAlias type="com.kh.final3.todo.model.vo.Todo" alias="todo"/>
+  			<typeAlias type="com.kh.final3.payment.model.vo.Payment" alias="payment"/>
+  			<typeAlias type="com.kh.final3.member.model.vo.MemberAttachment" alias="memberAttachment"/>
+  			<typeAlias type="com.kh.final3.alert.model.vo.Alert" alias="alert"/>
+  		</typeAliases>
+  		
+  		<mappers>
+  			<mapper resource="/mappers/boardMappers/notice-mapper.xml"/>
+  			<mapper resource="/mappers/boardMappers/document-mapper.xml"/>
+  			<mapper resource="/mappers/boardMappers/reservation-mapper.xml"/>
+  			<mapper resource="/mappers/boardMappers/freeForum-mapper.xml"/>
+  			<mapper resource="/mappers/approval/approval-mapper.xml"/>
+  			<mapper resource="/mappers/attendance/attendance-mapper.xml"/>
+  		</mappers>
+  </configuration>

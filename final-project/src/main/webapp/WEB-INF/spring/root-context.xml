@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	
+		<bean class="org.apache.commons.dbcp.BasicDataSource" id="dataSource">
+	 	<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+	 	<property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+	 	<property name="username" value="FINAL"/>
+	 	<property name="password" value="FINAL"/>
+	 </bean>
+	 
+	 <bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactory">
+	 	<property name="configLocation" value="classpath:mybatis-config.xml"/> 
+	 	<property name="mapperLocations" value="classpath:/mappers/*-mapper.xml"></property>
+	 	<property name="dataSource" ref="dataSource"/>
+	 </bean>
+	 
+	 <bean class="org.mybatis.spring.SqlSessionTemplate" id="sqlSession">
+	  	<constructor-arg ref="sqlSessionFactory"/>
+	 </bean>
+    
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <property name="basenames">
+            <list>
+                <value>/resources/prop/security_message</value>
+            </list>
+        </property>
+        <property name="defaultEncoding" value="UTF-8"/>
+        <property name="cacheSeconds" value="5"/> 
+    </bean>
+    
+	<!-- 파일 업로드 관련 빈 등록 -->
+
+	<bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="filterMultipartResolver" >
+	    <property name="maxUploadSize" value="100000000" />
+	    <property name="defaultEncoding" value="UTF-8" />
+	    <property name="maxInMemorySize" value="10000000"/>
+  </bean>
+	 	
+	 <!-- 트랜젝션 어노테이션  -->
+	 <tx:annotation-driven/>
+	  	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	  		<property name="dataSource" ref="dataSource"></property>
+		</bean>
+	
+	<!-- saveFile 빈등록 -->	
+	<bean class="com.kh.final3.common.template.SaveFile" id="saveFile"/>
+	<bean class="com.kh.final3.board.model.vo.BoardAttachment" id="boardAttachment" />
+	
+	<!-- 이메일 관련 빈등록 -->
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.naver.com"/> <!-- 메이서버 호스트 -->
+		 <property name="port" value="465"/> <!-- 메이서버 포트번호 -->
+		 <property name="username" value="tom940602@naver.com"/> <!-- 자신의 이메일 아이디 -->
+		 <property name="password" value="starfish"/> <!-- 자신의 비밀번호 -->
+		   <!-- 보안연결 SSL과 관련된 설정 -->
+		 <property name="javaMailProperties">
+		  <props>
+		  <prop key="mail.smtp.auth">true</prop>
+		  <prop key="mail.smtp.starttls.enable">true</prop>
+		  <prop key="mail.smtps.checkserveridentity">true</prop>
+		  <prop key="mail.smtps.ssl.trust">*</prop>
+		  <prop key="mail.debug">true</prop>
+		  <prop key="mail.smtp.socketFactory.class">javax.net.ssl.SSLSocketFactory</prop>
+		  </props>
+		  </property>
+	</bean>
+	
+	<bean class="com.kh.final3.todo.model.vo.Todo" id="todo"/>
+	
+	<bean class="com.kh.final3.attendance.model.vo.Attendance" id="attendance"/>
+</beans>

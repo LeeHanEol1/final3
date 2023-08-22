@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="approvalMapper">
+ 	<resultMap type="approvalDoc" id="approvalDocResultSet">
+ 		<result column ="DOC_NO" property="docNo"/>
+ 		<result column ="DEPT_NAME" property="deptCode"/>
+ 		<result column ="DOC_NAME" property="docType"/>
+ 		<result column ="DOC_WRITER" property="docWriter"/>
+ 		<result column ="DOC_TITLE" property="docTitle"/>
+ 		<result column ="DOC_CONTENT" property="docContent"/>
+ 		<result column ="CREATE_DATE" property="createDate"/>
+ 		<result column ="STATUS" property ="status"/>
+ 		<result column ="EMERGENCY" property="emergency"/>
+ 		<result column ="SECOND_DATE" property ="secondDate"/>
+ 		<result column ="LAST_DATE" property ="lastDate"/>
+ 		<result column ="APPROVAL" property ="approval"/>
+ 		<result column ="REJECT" property="reject"/>
+ 		<result column ="SECOND_APPROVER_NO" property ="secondApproverNo"/>
+ 		<result column ="LAST_APPROVER_NO" property ="lastApproverNo"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="docType" id="docTypeResultSet">
+ 		<result column="DOC_TYPE" property="docType"/>
+ 		<result column="DOC_NAME" property="docName"/>
+ 		<result column="DOC_CATEGROY" property="docCategory"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="member" id="memberResultSet">
+    	<result column="USER_NAME" property="userName"/>
+    	<result column="DEPT_NAME" property="deptCode"/>
+    	<result column="JOB_NAME" property="jobCode"/>
+    	<result column="USER_NO" property="userNo"/>
+    </resultMap>
+    
+    <resultMap type="approval" id="approvalResultSet">
+ 		<result column ="APP_NO" property="appNo"/>
+ 		<result column ="DOC_NO" property ="docNo"/>
+ 		<result column ="DEPT_CODE" property ="deptCode"/>
+ 		<result column ="SECOND_APPROVER_NO" property ="secondApproverNo"/>
+ 		<result column ="SECOND_JOB_NAME" property ="secondJobName"/>
+ 		<result column ="SECOND_APPROVER" property ="secondApprover"/>
+ 		<result column ="SECOND_SIGNATURE" property ="secondSignature"/>
+ 		<result column ="LAST_APPROVER_NO" property ="lastApproverNo"/>
+ 		<result column ="LAST_JOB_NAME" property = "lastJobName"/>
+ 		<result column ="LAST_APPROVER" property ="lastApprover"/>
+ 		<result column ="LAST_SIGNATURE" property ="lastSignature"/>
+ 		<result column ="SECOND_DATE" property ="secondDate"/>
+ 		<result column ="LAST_DATE" property ="lastDate"/>
+ 		<result column ="RETURN_REASON" property ="returnReason"/>
+ 		<result column ="STATUS" property ="status"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="approvalAttachment" id="approvalAttachmentResultSet">
+ 		<result column ="APP_FILE_NO" property ="appFileNo"/>
+ 		<result column ="DOC_NO" property="docNo"/>
+ 		<result column ="DEPT_CODE" property ="deptCode"/>
+ 		<result column ="ORIGIN_NAME" property ="originName"/>
+ 		<result column ="CHANGE_NAME" property ="changeName"/>
+ 		<result column ="UPLOAD_DATE" property ="uploadDate"/>
+ 		<result column ="FILE_PATH" property ="filePath"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="item" id="itemResultSet">
+ 		<result column ="DOC_NO" property="docNo"/>
+ 		<result column ="DEPT_CODE" property ="deptCode"/>
+ 		<result column ="SUPPLY_NAME" property ="supplyName"/>
+ 		<result column ="SUPPLY_SIZE" property ="supplySize"/>
+ 		<result column ="AMOUNT" property ="amount"/>
+ 		<result column ="PRICE" property ="price"/>
+ 		<result column ="CREATE_DATE" property ="createDate"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="leave" id="leaveResultSet">
+ 		<result column ="DOC_NO" property="docNo"/>
+ 		<result column ="DEPT_CODE" property ="deptCode"/>
+ 		<result column="WORK_RECEIVER" property="workReceiver"/>
+ 		<result column="LEAVE_TYPE" property="leaveCode"/>
+ 		<result column="START_DATE" property="startDate"/>
+ 		<result column="END_DATE" property="endDate"/>
+ 		<result column="LEAVE_CONTENT" property="leaveContent"/>
+ 		<result column="CREATE_DATE" property="createDate"/>
+ 		<result column="LEAVE_STATUS" property="leaveStatus"/>
+ 	</resultMap>
+ 	
+ 	<!-- 결재문서 갯수 -->
+ 	<select id="selectListCount" resultType="_int">
+ 		SELECT COUNT(*)
+		FROM APPROVAL_DOC A
+		<choose>
+			<when test='option == "0"'>
+				JOIN DEPARTMENT D ON (A.DEPT_CODE = D.DEPT_CODE )
+				JOIN DOC_TYPE T ON (A.DOC_TYPE = T.DOC_TYPE)
+				JOIN APPROVAL P ON (A.DOC_NO = P.DOC_NO)
+				WHERE (D.DEPT_NAME LIKE '%'||#{keyword}||'%' OR T.DOC_NAME LIKE '%'||#{keyword}||'%' OR A.DOC_TITLE LIKE '%'||#{keyword}||'%')
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+	 		<when test='option == "1"'>
+	 			JOIN APPROVAL P ON (A.DOC_NO = P.DOC_NO)	
+				JOIN DEPARTMENT D ON (A.DEPT_CODE = D.DEPT_CODE )
+				WHERE D.DEPT_NAME LIKE '%'||#{keyword}||'%'
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+			<when test='option == "2"'>	
+				JOIN APPROVAL P ON (A.DOC_NO = P.DOC_NO)	
+				JOIN DOC_TYPE T ON (A.DOC_TYPE = T.DOC_TYPE)
+				WHERE T.DOC_NAME LIKE '%'||#{keyword}||'%'
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+			<when test='option == "3"'>
+				JOIN APPROVAL P ON (A.DOC_NO = P.DOC_NO)
+				WHERE A.DOC_TITLE LIKE '%'||#{keyword}||'%'
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+			<otherwise>
+				JOIN APPROVAL P ON (A.DOC_NO = P.DOC_NO)
+				WHERE (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</otherwise>
+ 		</choose>
+		<if test='status != null and !status.equals("")'>
+			AND A.STATUS = #{status}
+		</if>
+ 	</select>
+ 	
+ 	<!-- 결재문서 리스트 불러오기 -->
+ 	<select id="selectApprovalDocList" parameterType="approvalDoc" resultMap="approvalDocResultSet">
+		SELECT A.DOC_NO
+			  ,D.DEPT_NAME
+			  ,T.DOC_NAME
+			  ,A.DOC_WRITER
+			  ,A.DOC_TITLE
+			  ,TO_CHAR(A.CREATE_DATE,'YYYY-MM-DD')"CREATE_DATE"
+			  ,A.STATUS
+			  ,A.EMERGENCY
+			  ,TO_CHAR(P.SECOND_DATE, 'YYYY-MM-DD') "SECOND_DATE"
+ 			  ,TO_CHAR(P.LAST_DATE, 'YYYY-MM-DD') "LAST_DATE"
+ 			  ,P.SECOND_APPROVER_NO
+ 			  ,P.LAST_APPROVER_NO
+ 			  ,A.STATUS
+ 		FROM APPROVAL_DOC A
+ 		JOIN DEPARTMENT D ON (A.DEPT_CODE = D.DEPT_CODE )
+		JOIN DOC_TYPE T ON (A.DOC_TYPE = T.DOC_TYPE)
+		JOIN APPROVAL P ON (A.DOC_NO = P.DOC_NO)
+		<choose>
+			<when test='option == "0"'>
+				WHERE (D.DEPT_NAME LIKE '%'||#{keyword}||'%' OR T.DOC_NAME LIKE '%'||#{keyword}||'%' OR A.DOC_TITLE LIKE '%'||#{keyword}||'%')
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+	 		<when test='option == "1"'>
+				WHERE D.DEPT_NAME LIKE '%'||#{keyword}||'%'
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+			<when test='option == "2"'>
+				WHERE T.DOC_NAME LIKE '%'||#{keyword}||'%'
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+			<when test='option == "3"'>
+				WHERE A.DOC_TITLE LIKE '%'||#{keyword}||'%'
+				AND (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</when>
+			<otherwise>
+				WHERE (A.DOC_WRITER = #{userNo} OR P.SECOND_APPROVER_NO = #{userNo} OR P.LAST_APPROVER_NO = #{userNo})
+			</otherwise>
+		</choose>
+		<if test='status != null and !status.equals("")'>
+			AND A.STATUS = #{status}
+		</if>
+		ORDER BY DECODE(A.EMERGENCY,'Y',2), A.CREATE_DATE DESC
+ 	</select>
+ 	
+ 	<!-- 결재 홈 리스트 불러오기 -->
+ 	<select id="approvalMainList" parameterType="approvalDoc" resultMap="approvalDocResultSet">
+ 		SELECT *
+		FROM (SELECT ROWNUM, A.*
+        FROM (SELECT DOC_NO
+ 				     ,DEPT_NAME
+ 				     ,DOC_NAME
+ 				     ,DOC_TITLE
+ 				     ,DOC_WRITER
+ 				     ,SECOND_APPROVER_NO
+ 				     ,LAST_APPROVER_NO
+ 				     ,EMERGENCY
+ 				     ,STATUS
+ 				     ,TO_CHAR(SECOND_DATE, 'YYYY-MM-DD') "SECOND_DATE"
+ 			  		 ,TO_CHAR(LAST_DATE, 'YYYY-MM-DD') "LAST_DATE"
+ 				     ,TO_CHAR(CREATE_DATE,'YYYY-MM-DD')"CREATE_DATE"
+ 			  FROM APPROVAL_DOC P
+ 			  JOIN DEPARTMENT USING (DEPT_CODE)
+			  JOIN DOC_TYPE USING (DOC_TYPE)
+			  JOIN APPROVAL USING (DOC_NO)
+ 			  <if test="status !=null">
+				WHERE P.STATUS = #{status}
+			  </if>
+              ORDER BY DECODE(EMERGENCY,'Y',2), P.CREATE_DATE DESC
+              ) A)
+    	WHERE ROWNUM BETWEEN 1 AND 5
+ 	</select>
+ 	
+ 	<!-- 결재문서 갯수 -->
+ 	<select id="selectEnrollListCount" resultType="_int">
+ 		SELECT COUNT(*)
+ 		FROM DOC_TYPE
+ 		<choose>
+ 			<when test='keyword != null'>
+	 			WHERE DOC_NAME LIKE '%'||#{keyword}||'%'
+ 			</when>
+ 			<when test='docCategory != null'>
+ 				WHERE DOC_CATEGORY = #{docCategory}
+ 			</when>
+ 			<when test='keyword != null and docCategory != null'>
+	 			WHERE DOC_NAME LIKE '%'||#{keyword}||'%'
+	 			AND DOC_CATEGORY = #{docCategory}
+ 			</when>
+ 		</choose>
+ 	</select>
+ 	
+ 	<!-- 결재 문서 리스트 -->
+ 	<select id="selectEnrollList" parameterType="docType" resultMap="docTypeResultSet">
+ 		SELECT * 
+ 		FROM DOC_TYPE
+ 		<choose>
+ 			<when test='keyword != null'>
+	 			WHERE DOC_NAME LIKE '%'||#{keyword}||'%'
+ 			</when>
+ 			<when test='docCategory != null'>
+ 				WHERE DOC_CATEGORY = #{docCategory}
+ 			</when>
+ 			<when test='keyword != null and !docCategory.equals("")'>
+	 			WHERE DOC_NAME LIKE '%'||#{keyword}||'%'
+	 			AND DOC_CATEGORY = #{docCategory}
+ 			</when>
+ 		</choose>
+ 	</select>
+ 	
+ 	<!-- 결재자 -->
+ 	<select id="selectApproverList" parameterType="member" resultMap="memberResultSet">
+ 		SELECT USER_NAME,DEPT_NAME,JOB_NAME,USER_NO,EMAIL
+		FROM MEMBER
+		JOIN DEPARTMENT USING(DEPT_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE STATUS = 'Y'
+		<choose>
+			<when test='keyword !=null and status.equals("1")'>
+				AND DEPT_NAME LIKE '%'||#{keyword}||'%'
+			</when>
+			<when test='keyword !=null and status.equals("2")'>
+				AND USER_NAME LIKE '%'||#{keyword}||'%'
+			</when>
+		</choose>
+		<if test="deptCode !=null">
+		AND DEPT_CODE = #{deptCode}
+		</if>
+		ORDER BY USER_NAME
+ 	</select>
+ 	
+ 	<!-- 결재 문서 작성 -->
+ 	<insert id="insertApprovalDoc">
+ 		INSERT INTO APPROVAL_DOC(DOC_NO,DEPT_CODE,DOC_TYPE,DOC_WRITER,DOC_TITLE,DOC_CONTENT,EMERGENCY) VALUES
+		(SEQ_ADNO.NEXTVAL,#{deptCode},#{docType},#{docWriter},#{docTitle},#{docContent},#{emergency})
+ 	</insert>
+ 	<insert id="insertApproval">
+ 		INSERT INTO APPROVAL (APP_NO, DOC_NO, DEPT_CODE,SECOND_APPROVER_NO,SECOND_JOB_NAME,SECOND_APPROVER,LAST_APPROVER_NO,LAST_JOB_NAME,LAST_APPROVER) VALUES
+		(SEQ_ANO.NEXTVAL,SEQ_ADNO.CURRVAL,#{deptCode},#{secondApproverNo},#{secondJobName},#{secondApprover},#{lastApproverNo},#{lastJobName},#{lastApprover})
+ 	</insert>
+ 	<insert id="insertApprovalAttachment">
+ 		INSERT INTO APPROVAL_ATTACHMENT (APP_FILE_NO, DOC_NO, DEPT_CODE,ORIGIN_NAME,CHANGE_NAME,FILE_PATH) VALUES
+		(SEQ_AFNO.NEXTVAL,SEQ_ADNO.CURRVAL,#{deptCode},#{originName},#{changeName},#{filePath})
+ 	</insert>
+ 	
+ 	<!-- 구매품의서 -->
+ 	<insert id="insertItem">
+ 		INSERT INTO ITEM(DOC_NO,DEPT_CODE,SUPPLY_NAME,SUPPLY_SIZE,AMOUNT,PRICE) VALUES
+		(SEQ_ADNO.CURRVAL,#{deptCode},#{supplyName},#{supplySize},#{amount},#{price})
+ 	</insert>
+ 	
+ 	<!-- 휴가계 -->
+ 	<insert id="insertLeave">
+ 		INSERT INTO LEAVE(DOC_NO,DEPT_CODE,WORK_RECEIVER,LEAVE_STATUS, LEAVE_CODE,START_DATE,END_DATE,LEAVE_CONTENT) VALUES
+ 		(SEQ_ADNO.CURRVAL,#{deptCode},#{workReceiver},#{leaveStatus},#{leaveCode},#{startDate},#{endDate},#{leaveContent})
+ 	</insert>
+ 	
+ 	<!-- 문서 불러오기 -->
+ 	<select id="selectApproval" parameterType="approval" resultMap="approvalResultSet">
+ 		SELECT APP_NO
+ 			  ,DOC_NO,DEPT_CODE
+ 			  ,SECOND_JOB_NAME
+ 			  ,SECOND_APPROVER_NO
+ 			  ,SECOND_APPROVER
+ 			  ,SECOND_SIGNATURE
+ 			  ,LAST_APPROVER_NO
+ 			  ,LAST_JOB_NAME
+ 			  ,LAST_APPROVER
+ 			  ,LAST_SIGNATURE
+ 			  ,TO_CHAR(SECOND_DATE, 'MM/DD hh24:mi') "SECOND_DATE"
+ 			  ,TO_CHAR(LAST_DATE, 'MM/DD hh24:mi') "LAST_DATE"
+ 			  ,RETURN_REASON
+ 		FROM APPROVAL
+	 	WHERE DOC_NO = #{docNo}
+ 	</select>
+ 	<select id="selectApprovalAttachment" parameterType="approvalAttachment" resultMap="approvalAttachmentResultSet">
+ 		SELECT APP_FILE_NO
+			   ,DOC_NO
+			   ,DEPT_CODE
+			   ,ORIGIN_NAME
+			   ,CHANGE_NAME
+			   ,UPLOAD_DATE
+			   ,FILE_PATH
+ 		FROM APPROVAL_ATTACHMENT
+ 		WHERE DOC_NO = #{docNo}
+ 	</select>
+ 	<select id="selectApprovalDoc" parameterType="approvalDoc" resultMap="approvalDocResultSet">
+ 		SELECT A.DOC_NO
+			  ,A.DEPT_CODE
+			  ,A.DOC_TYPE
+			  ,A.DOC_WRITER
+			  ,A.DOC_TITLE
+			  ,A.DOC_CONTENT
+			  ,TO_CHAR(A.CREATE_DATE, 'YYYY-MM-DD')"CREATE_DATE"
+			  ,A.STATUS
+			  ,A.EMERGENCY
+ 		FROM APPROVAL_DOC A
+ 		WHERE DOC_NO = #{docNo}
+ 	</select>
+ 	
+ 	<!-- 구매품의서 -->
+ 	<select id="selectItem" parameterType="item" resultMap="itemResultSet" >
+ 		SELECT DOC_NO
+ 			  ,DEPT_CODE
+ 			  ,SUPPLY_NAME
+ 			  ,SUPPLY_SIZE
+ 			  ,AMOUNT, PRICE
+ 			  ,TO_CHAR(CREATE_DATE, 'YYYY-MM-DD')"CREATE_DATE"
+ 		FROM ITEM
+ 		WHERE DOC_NO = #{docNo}
+ 	</select>
+ 	
+ 	<!-- 휴가계 -->
+ 	<select id="selectLeave" parameterType="leave" resultMap="leaveResultSet">
+ 		SELECT L.DOC_NO
+ 			  ,L.DEPT_CODE
+ 			  ,L.WORK_RECEIVER
+ 			  ,W.LEAVE_TYPE
+ 			  ,TO_CHAR(L.START_DATE,'YYYY-MM-DD') "START_DATE"
+ 			  ,TO_CHAR(L.END_DATE,'YYYY-MM-DD') "END_DATE"
+ 			  ,L.LEAVE_CONTENT
+ 			  ,TO_CHAR(L.CREATE_DATE, 'YYYY-MM-DD') "CREATE_DATE"
+ 			  ,L.LEAVE_STATUS
+ 		FROM LEAVE L
+ 		JOIN WORK_TYPE W ON (W.LEAVE_CODE = L.LEAVE_CODE)
+ 		WHERE L.DOC_NO = #{docNo}
+ 	</select>
+ 	<!-- 반려 -->
+ 	<update id="updateSecondReturnReason">
+ 		UPDATE APPROVAL
+ 		SET RETURN_REASON = #{returnReason}
+ 		   ,SECOND_SIGNATURE = '반려'
+ 		   ,SECOND_DATE = SYSDATE
+ 		WHERE DOC_NO = #{docNo} 
+ 	</update>
+ 	<update id="updateLastReturnReason">
+		UPDATE APPROVAL
+ 		SET RETURN_REASON = #{returnReason}
+ 		   ,LAST_SIGNATURE = '반려'
+ 		   ,LAST_DATE = SYSDATE
+ 		WHERE DOC_NO = #{docNo}
+ 	</update>
+ 	
+ 	<!-- 상태변경 -->
+ 	<update id="updateStatus">
+ 		UPDATE APPROVAL_DOC
+ 		SET STATUS = #{status}
+ 		   ,EMERGENCY = 'N'
+ 		WHERE DOC_NO = #{docNo}
+ 	</update>
+ 	
+ 	<!-- 승인 -->
+ 	<update id="updateSecondApprover">
+ 		UPDATE APPROVAL
+ 		SET SECOND_SIGNATURE = #{secondSignature}
+ 		   ,SECOND_DATE = SYSDATE
+ 		WHERE DOC_NO = #{docNo}
+ 	</update>
+ 	<update id="updateLastApprover">
+		UPDATE APPROVAL
+ 		SET LAST_SIGNATURE = #{lastSignature}
+ 		   ,LAST_DATE = SYSDATE
+ 		WHERE DOC_NO = #{docNo}
+ 	</update>
+ 	
+ 	<!-- 월별 데이터 -->
+ 	<select id="monthData" parameterType="approvalDoc" resultMap="approvalDocResultSet">
+ 		SELECT TO_CHAR(CREATE_DATE, 'MON') "CREATE_DATE"
+ 			  ,NVL(COUNT(CASE WHEN STATUS ='Y' THEN 1 END),0) "APPROVAL"
+ 			  ,NVL(COUNT(CASE WHEN STATUS ='R' THEN 1 END),0) "REJECT"
+		FROM APPROVAL_DOC
+		WHERE TO_CHAR(CREATE_DATE, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+		AND DOC_WRITER = #{docWriter}
+		GROUP BY TO_CHAR(CREATE_DATE, 'MON')
+		ORDER BY CREATE_DATE
+ 	</select>
+ </mapper>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="scheduleMapper">
+	<!-- 부서 스케줄 resultSet -->
+	<resultMap type="schedule" id="scheduleResultSet">
+		<result column="SCHEDULE_NO" property="scheduleNo"/>
+		<result column="DEPT_CODE" property="deptCode"/>
+		<result column="USER_NAME" property="userName"/>
+		<result column="SCHEDULE_TYPE" property="scheduleType"/>
+		<result column="SCHEDULE_TITLE" property="scheduleTitle"/>
+		<result column="SCHEDULE_CONTENT" property="scheduleContent"/>
+		<result column="ENROLL_DATE" property="enrollDate"/>
+		<result column="MODIFY_DATE" property="modifyDate"/>
+		<result column="START_DATE" property="startDate"/>
+		<result column="END_DATE" property="endDate"/>
+		<result column="STATUS" property="status"/>
+	</resultMap>
+
+	<resultMap type="leave" id="scheduleLeaveResultSet">
+ 		<result column ="DOC_NO" property="docNo"/>
+ 		<result column ="DEPT_CODE" property ="deptCode"/>
+ 		<result column="WORK_RECEIVER" property="workReceiver"/>
+ 		<result column="LEAVE_CODE" property="leaveCode"/>
+ 		<result column="LEAVE_TYPE" property="leaveType"/>
+ 		<result column="START_DATE" property="startDate"/>
+ 		<result column="END_DATE" property="endDate"/>
+ 		<result column="LEAVE_CONTENT" property="leaveContent"/>
+ 		<result column="CREATE_DATE" property="createDate"/>
+ 		<result column="LEAVE_STATUS" property="leaveStatus"/>
+ 		<result column="USER_NAME" property="userName"/>
+ 		<result column="JOB_NAME" property="jobName"/>
+ 	</resultMap>
+ 	
+	<!-- 부서 일정 등록 -->
+	<insert id="addSchedule">
+		INSERT INTO SCHEDULE (SCHEDULE_NO, DEPT_CODE, USER_NO, SCHEDULE_TYPE, SCHEDULE_TITLE, SCHEDULE_CONTENT, START_DATE, END_DATE)
+          VALUES(SEQ_SCHNO.NEXTVAL,#{deptCode},#{userNo},#{scheduleType},#{scheduleTitle},#{scheduleContent},#{startDate},#{endDate})
+	</insert>
+	
+	<!-- 부서 일정 조회 -->
+	<select id="getSchedule" resultMap="scheduleResultSet">
+		SELECT S.SCHEDULE_NO, S.DEPT_CODE, USER_NAME, S.SCHEDULE_TITLE, S.SCHEDULE_CONTENT, S.SCHEDULE_TYPE,
+      		   TO_CHAR(START_DATE,'YYYY-MM-DD') AS START_DATE,
+       		   TO_CHAR(END_DATE+1,'YYYY-MM-DD') AS END_DATE,
+      		   S.STATUS
+		FROM SCHEDULE S
+		JOIN MEMBER M USING(USER_NO)
+		WHERE SCHEDULE_TYPE ='DS'
+		AND S.STATUS = 'Y'
+		AND S.DEPT_CODE = #{deptCode}
+	</select>
+	
+	<!-- 부서 일정 수정 -->
+	<update id="updateSchedule">
+		UPDATE SCHEDULE
+				SET USER_NO = #{userNo},
+					SCHEDULE_TITLE = #{scheduleTitle},
+					SCHEDULE_CONTENT = #{scheduleContent},
+					START_DATE = #{startDate},
+					END_DATE = #{endDate}, 
+					MODIFY_DATE = SYSDATE
+				WHERE STATUS = 'Y'	
+				AND DEPT_CODE = #{deptCode}
+				AND SCHEDULE_NO = #{scheduleNo} 
+	</update>
+	<!-- 부서 일정 삭제 -->
+	<update id="deleteSchedule">
+		  UPDATE SCHEDULE
+		  		 SET STATUS = 'N'
+		  		 WHERE SCHEDULE_NO = #{scheduleNo} 
+	</update>
+	
+	<!--  부서 휴가 조회 -->
+	<select id="getLeaveSchedule" resultMap="scheduleLeaveResultSet">
+		SELECT DOC_NO, USER_NAME, LEAVE_TYPE, LEAVE_CODE, JOB_NAME,WORK_RECEIVER,
+		       TO_CHAR(START_DATE,'YYYY-MM-DD') AS START_DATE, 
+		       TO_CHAR(END_DATE,'YYYY-MM-DD') AS END_DATE
+		FROM LEAVE 
+		JOIN APPROVAL_DOC AD USING(DOC_NO)
+		JOIN MEMBER ON(USER_NO = DOC_WRITER)
+		JOIN WORK_TYPE USING (LEAVE_CODE)
+		JOIN JOB USING(JOB_CODE)
+		WHERE AD.DEPT_CODE = #{deptCode}
+		AND AD.STATUS ='Y'
+		AND LEAVE_STATUS = '신청'
+		AND LEAVE_CODE IN ('L2','L3','L4','L5','L6','L8','L9')
+	</select>
+	
+	<!-- 회사 일정 조회 -->
+	<select id="selectAllList" resultMap="scheduleResultSet">
+		SELECT SCHEDULE_NO,USER_NO, SCHEDULE_TITLE, SCHEDULE_CONTENT, SCHEDULE_TYPE,
+			   TO_CHAR(START_DATE,'YYYY-MM-DD') AS START_DATE,
+			   TO_CHAR(END_DATE+1,'YYYY-MM-DD') AS END_DATE
+		FROM SCHEDULE
+		WHERE SCHEDULE_TYPE =#{scheduleType}
+		AND STATUS ='Y'
+	</select>
+	
+	<!-- 회사 일정 수정 -->
+	<update id="updateAllSchedule">
+		UPDATE SCHEDULE
+				SET USER_NO = #{userNo},
+					SCHEDULE_TITLE = #{scheduleTitle},
+					SCHEDULE_CONTENT = #{scheduleContent},
+					START_DATE = #{startDate},
+					END_DATE = #{endDate}, 
+					MODIFY_DATE = SYSDATE
+				WHERE STATUS = 'Y'	
+				AND SCHEDULE_NO = #{scheduleNo}
+				AND SCHEDULE_TYPE = #{scheduleType} 
+				AND DEPT_CODE = #{deptCode}
+	</update>
+	
+	<!-- 회사 일정 삭제 -->
+	<update id="deleteAllSchedule">
+		UPDATE SCHEDULE
+			SET STATUS = 'N'
+			WHERE SCHEDULE_TYPE = #{scheduleType}
+			AND SCHEDULE_NO = #{scheduleNo} 
+			AND DEPT_CODE =  #{deptCode}
+	</update>
+	
+	<!-- 개인 일정 조회 -->
+	<select id="selectUserSchedule" resultMap="scheduleResultSet">
+		SELECT SCHEDULE_NO, SCHEDULE_TITLE, SCHEDULE_CONTENT, SCHEDULE_TYPE,
+			   TO_CHAR(START_DATE,'YYYY-MM-DD') AS START_DATE,
+			   TO_CHAR(END_DATE+1,'YYYY-MM-DD') AS END_DATE
+		FROM SCHEDULE
+		WHERE SCHEDULE_TYPE = #{scheduleType}
+		AND USER_NO = #{userNo}
+		AND STATUS ='Y'
+	</select>
+	
+	<!-- 개인 일정 수정 -->
+	<update id="updateUserSchedule">
+		UPDATE SCHEDULE
+			SET SCHEDULE_TITLE = #{scheduleTitle},
+				SCHEDULE_CONTENT = #{scheduleContent},
+				START_DATE = #{startDate},
+				END_DATE = #{endDate}, 
+				MODIFY_DATE = SYSDATE
+		WHERE STATUS = 'Y'	
+		AND SCHEDULE_NO = #{scheduleNo}
+		AND SCHEDULE_TYPE = #{scheduleType} 
+		AND USER_NO = #{userNo}
+	</update>
+	
+	<!-- 개인 일정 삭제  -->
+	<update id="deleteUserSchedule">
+		UPDATE SCHEDULE
+			SET STATUS ='N'
+		WHERE SCHEDULE_TYPE = #{scheduleType}
+		AND SCHEDULE_NO = #{scheduleNo} 
+		AND USER_NO = #{userNo}	
+	</update>
+</mapper>

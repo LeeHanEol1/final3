@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="reservationMapper">
+  	
+  	<insert id="enrollMeetingRoomRev">
+  	INSERT ALL
+	INTO RESERVATION VALUES(SEQ_REV.NEXTVAL, #{userNo}, #{revDate}, #{startTime}, #{endTime}, #{reserveCategory}, DEFAULT)
+	INTO MEETINGROOM_RESERVATION VALUES(SEQ_REV.CURRVAL, #{roomCode})
+	SELECT * FROM DUAL
+  	</insert>
+  	
+  	<select id="selectReservationList" resultMap="reservationResultSet">
+  	SELECT RESERVATION_NO, USER_NO, USER_NAME, REV_DATE, START_TIME, END_TIME, RESERVE_CATEGORY, ROOM_CODE
+	FROM RESERVATION R
+	JOIN MEETINGROOM_RESERVATION USING(RESERVATION_NO)
+    JOIN MEMBER M USING(USER_NO)
+	WHERE R.STATUS='Y'
+	AND RESERVE_CATEGORY = 'M'
+  	</select>
+  	
+  	<resultMap type="reservation" id="reservationResultSet">
+  		<result column="RESERVATION_NO" property="reservationNo"/>
+  		<result column="USER_NO" property="userNo"/>
+  		<result column="REV_DATE" property="revDate"/>
+  		<result column="START_TIME" property="startTime"/>
+  		<result column="END_TIME" property="endTime"/>
+  		<result column="RESERVE_CATEGORY" property="reserveCategory"/>
+  		<result column="ROOM_CODE" property="roomCode"/>
+  		<result column="USER_NAME" property="userName"/>
+  	</resultMap>
+  	
+  	<update id="updateMeetingRoomRev">
+  	UPDATE RESERVATION
+  	SET REV_DATE = #{revDate}
+  	  , START_TIME = #{startTime}
+  	  , END_TIME = #{endTime}
+  	WHERE RESERVATION_NO = #{reservationNo}
+  	AND  STATUS = 'Y'
+  	</update>
+  	
+  	<update id="updateMeetingRoomCode">
+  	UPDATE MEETINGROOM_RESERVATION
+  	SET ROOM_CODE = #{roomCode}
+  	WHERE RESERVATION_NO = #{reservationNo}
+  	</update>
+  	
+  	<update id="deleteMeetingRoomRev">
+  	DELETE RESERVATION
+  	WHERE RESERVATION_NO = #{reservationNo}
+  	</update>
+  	
+  	<update id="deleteMeetingRoomCode">
+  	DELETE MEETINGROOM_RESERVATION
+  	WHERE RESERVATION_NO = #{reservationNo}
+  	</update>
+  	
+  </mapper>
